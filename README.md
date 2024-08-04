@@ -18,26 +18,34 @@ go run .
 
 ## API Endpoint
 
-1. POST http://localhost:8080/api/publish
-    Request JSON:
-    {
-        "blob": "Base64 Encoded string",
-        "shard_count_half": number
-    }
-    Response:
-    {
-        metadata_uri: "metadata_uri"
-    }
+### 1. POST http://localhost:8080/api/publish
 
-2. GET http://localhost:8080/api/uploaded_data?metadata_uri=[metadata_uri]
+Request JSON:
+```protobuf
+{
+    "blob": "Base64 Encoded string",
+    "shard_count_half": number
+}
+```
+Response JSON:
+```protobuf
+{
+    metadata_uri: "metadata_uri"
+}
+```
 
-   Response:
-      {
-        shard_hashes: [
-            "[hash1]",
-            "[hash2]",
-            ...
-        ]
-      }
+### 2. GET http://localhost:8080/api/uploaded_data?metadata_uri=[metadata_uri]
 
+Response:
+```protobuf
+{
+    shard_size: number,
+    shard_count: number,
+    shard_uris:[
+        "uri1",
+        "uri2",
+        ...
+    ]
+}
+```
 

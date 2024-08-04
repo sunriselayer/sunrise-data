@@ -24,7 +24,9 @@ import (
 )
 
 type UploadedDataResponse struct {
-	ShardHashes []string `json:"shard_hashes"`
+	ShardSize  uint64   `json:"shard_size"`
+	ShardCount uint64   `json:"shard_count"`
+	ShardUris  []string `json:"shard_uris"`
 }
 
 type PublishRequest struct {
@@ -141,18 +143,10 @@ func Handle() {
 			return
 		}
 
-		shardHashes := []string{}
-		for _, shardUri := range metadata.ShardUris {
-			shard, err := getDataFromIpfs(shardUri)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(hashMimc(shard)))
-		}
-
 		res := UploadedDataResponse{
-			ShardHashes: shardHashes,
+			ShardSize:  metadata.ShardSize,
+			ShardCount: metadata.ShardCount,
+			ShardUris:  metadata.ShardUris,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
