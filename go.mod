@@ -16,6 +16,7 @@ require (
 	github.com/99designs/keyring v1.2.2
 	github.com/cockroachdb/errors v1.11.1
 	github.com/cometbft/cometbft v0.38.9
+	github.com/consensys/gnark v0.10.0
 	github.com/cosmos/cosmos-sdk v0.50.8
 	github.com/cosmos/go-bip39 v1.0.0
 	github.com/cosmos/gogoproto v1.5.0
@@ -46,6 +47,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20240626203959-61d1e3462e30 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816 // indirect
+	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2 // indirect
@@ -58,6 +60,8 @@ require (
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/cometbft/cometbft-db v0.9.1 // indirect
+	github.com/consensys/bavard v0.1.13 // indirect
+	github.com/consensys/gnark-crypto v0.12.2-0.20240215234832-d72fcb379d3e // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
 	github.com/cosmos/cosmos-db v1.0.2 // indirect
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
@@ -95,6 +99,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
+	github.com/google/pprof v0.0.0-20240618054019-d3b898a103f8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -162,6 +167,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mmcloughlin/addchain v0.4.0 // indirect
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
@@ -244,5 +250,6 @@ require (
 	lukechampine.com/blake3 v1.3.0 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 	pgregory.net/rapid v1.1.0 // indirect
+	rsc.io/tmplfunc v0.0.3 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )

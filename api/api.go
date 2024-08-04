@@ -4,15 +4,19 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 
 	"net/http"
 
 	"encoding/base64"
 
-	"crypto/sha256"
-
+	native_mimc "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
 	"github.com/gorilla/mux"
 	"github.com/ipfs/boxo/files"
+	"github.com/ipfs/boxo/path"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/kubo/client/rpc"
 	"github.com/sunriselayer/sunrise-data/cosmosclient"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
@@ -24,11 +28,12 @@ type UploadedDataResponse struct {
 }
 
 type PublishRequest struct {
-	Blob string `json:"blob"`
+	Blob           string `json:"blob"`
+	ShardCountHalf int    `json:"shard_count_half"`
 }
 
 type PublishResponse struct {
-	TxHash string `json:"tx_hash"`
+	MetadataUri string `json:"metadata_uri"`
 }
 
 const SUNRISE_ADDR_PRIFIX string = "sunrise"
@@ -37,7 +42,7 @@ func Handle() {
 	r := mux.NewRouter()
 	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Welcome to cau-sunrise-data API"))
-	})
+	}).Methods("GET")
 	r.HandleFunc("/api/publish", func(w http.ResponseWriter, r *http.Request) {
 		var req PublishRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -45,18 +50,22 @@ func Handle() {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		base64Bytes, err := base64.StdEncoding.DecodeString(req.Blob)
+		blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		shardCountHalf := 2 //how to set?
-		//how to use shard_size, shard_count
-		shardSize, shardCount, shards := erasurecoding.ErasureCode(base64Bytes, shardCountHalf)
+
+		shardSize, shardCount, shards := erasurecoding.ErasureCode(blobBytes, req.ShardCountHalf)
+		shardUris, err := getShardUris(shards)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		metadata := types.Metadata{
 			ShardSize:  shardSize,
 			ShardCount: uint64(shardCount),
-			ShardUris:  byteSlicesToBase64Strings(shards),
+			ShardUris:  shardUris,
 		}
 		metadataBytes, err := metadata.Marshal()
 		if err != nil {
@@ -65,21 +74,12 @@ func Handle() {
 		}
 
 		//upload ipfs
-		node, err := rpc.NewLocalApi()
+		metadataUri, err := uploadIpfs(metadataBytes)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		ctx := context.Background()
-		// Create a reader for the byte array
-		reader := bytes.NewReader(metadataBytes)
-		fileReader := files.NewReaderFile(reader)
-		cidFile, err := node.Unixfs().Add(ctx, fileReader)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
 		nodeClient, err := cosmosclient.New(ctx, cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -103,8 +103,8 @@ func Handle() {
 		// Define a message to create a post
 		msg := &types.MsgPublishData{
 			Sender:            addr,
-			RecoveredDataHash: []byte{},
-			MetadataUri:       cidFile.String(),
+			RecoveredDataHash: hashMimc(blobBytes),
+			MetadataUri:       metadataUri,
 			ShardDoubleHashes: byteSlicesToDoubleHashes(shards),
 		}
 		// Broadcast a transaction from account `alice` with the message
@@ -114,10 +114,11 @@ func Handle() {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		fmt.Println("TxHash:", txResp.TxHash)
 		// Print response from broadcasting a transaction
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(PublishResponse{
-			TxHash: txResp.TxHash,
+			MetadataUri: metadataUri,
 		})
 	}).Methods("POST")
 
@@ -127,59 +128,106 @@ func Handle() {
 			http.Error(w, "Invalid query parameter", http.StatusBadRequest)
 			return
 		}
-
-		ctx := context.Background()
-
-		// Create a Cosmos client instance
-		nodeClient, err := cosmosclient.New(ctx, cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX))
+		metadataBytes, err := getDataFromIpfs(metadataUri)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		queryClient := types.NewQueryClient(nodeClient.Context())
-		queryResp, err := queryClient.PublishedData(ctx, &types.QueryPublishedDataRequest{})
-		if err != nil {
+		metadata := types.Metadata{}
+
+		if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		publishedDataList := queryResp.GetData()
-		res := UploadedDataResponse{}
 
-		for _, publishedData := range publishedDataList {
-			if publishedData.MetadataUri == metadataUri {
-				res.ShardHashes = byteSlicesToBase64Strings(publishedData.ShardDoubleHashes)
+		shardHashes := []string{}
+		for _, shardUri := range metadata.ShardUris {
+			shard, err := getDataFromIpfs(shardUri)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
+			shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(hashMimc(shard)))
 		}
+
+		res := UploadedDataResponse{
+			ShardHashes: shardHashes,
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(res)
 
 	}).Methods("GET")
+	fmt.Println("Running on localhost:8080")
 	http.ListenAndServe(":8080", r)
-}
 
-func byteSlicesToBase64Strings(inputData [][]byte) []string {
-	var base64Strings []string
-	for _, data := range inputData {
-		base64String := base64.StdEncoding.EncodeToString(data)
-		base64Strings = append(base64Strings, base64String)
-	}
-	return base64Strings
 }
 
 func byteSlicesToDoubleHashes(inputData [][]byte) [][]byte {
 	var convertedData [][]byte
 	for _, data := range inputData {
-		convertedData = append(convertedData, doubleHashSha256(data))
+		convertedData = append(convertedData, doubleHashMimc(data))
 	}
 	return convertedData
 }
 
-func doubleHashSha256(data []byte) []byte {
-	h := sha256.New()
-	h.Write(data)
-	bs := h.Sum(nil)
-	h.Reset()
-	h.Write(bs)
-	return h.Sum(nil)
+func hashMimc(data []byte) []byte {
+	m := native_mimc.NewMiMC()
+	m.Write(data)
+	return m.Sum(nil)
+}
+
+func doubleHashMimc(data []byte) []byte {
+	hashData := hashMimc(data)
+	return hashMimc(hashData)
+}
+
+// upload shards to ipfs
+func getShardUris(inputData [][]byte) ([]string, error) {
+	var shardUris []string
+	for _, data := range inputData {
+		shardUri, err := uploadIpfs(data)
+		if err != nil {
+			return nil, err
+		}
+		shardUris = append(shardUris, shardUri)
+	}
+	return shardUris, nil
+}
+
+func uploadIpfs(inputData []byte) (string, error) {
+	node, err := rpc.NewLocalApi()
+	if err != nil {
+		return "", err
+	}
+	ctx := context.Background()
+	reader := bytes.NewReader(inputData)
+	fileReader := files.NewReaderFile(reader)
+	cidFile, err := node.Unixfs().Add(ctx, fileReader)
+	if err != nil {
+		return "", err
+	}
+	return cidFile.String(), nil
+}
+
+func getDataFromIpfs(uri string) ([]byte, error) {
+	node, err := rpc.NewLocalApi()
+	if err != nil {
+		return nil, err
+	}
+	ctx := context.Background()
+	cidData, err := cid.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
+	data, err := node.Unixfs().Get(ctx, path.FromCid(cidData))
+	if err != nil {
+		return nil, err
+	}
+	r, ok := data.(files.File)
+	if !ok {
+		return nil, errors.New("incorrect type from Unixfs().Get()")
+	}
+	return io.ReadAll(r)
 }
