@@ -115,7 +115,19 @@ func GetShardUris(inputData [][]byte, protocol string) ([]string, error) {
 }
 
 func UploadToIpfs(inputData []byte) (string, error) {
-	node, err := rpc.NewLocalApi()
+	var err error
+	var node *rpc.HttpApi
+	if config.IPFS_API_URL != "" {
+		node, err = rpc.NewURLApiWithClient(config.IPFS_API_URL, &http.Client{
+			Transport: &http.Transport{
+				Proxy:             http.ProxyFromEnvironment,
+				DisableKeepAlives: true,
+			},
+		})
+	} else {
+		node, err = rpc.NewLocalApi()
+	}
+
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +157,19 @@ func UploadToArweave(inputData []byte) (string, error) {
 
 func GetDataFromIpfsOrArweave(uri string) ([]byte, error) {
 	if uri[:6] == "/ipfs/" { //ipfs
-		node, err := rpc.NewLocalApi()
+		var err error
+		var node *rpc.HttpApi
+		if config.IPFS_API_URL != "" {
+			node, err = rpc.NewURLApiWithClient(config.IPFS_API_URL, &http.Client{
+				Transport: &http.Transport{
+					Proxy:             http.ProxyFromEnvironment,
+					DisableKeepAlives: true,
+				},
+			})
+		} else {
+			node, err = rpc.NewLocalApi()
+		}
+
 		if err != nil {
 			return nil, err
 		}
