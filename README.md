@@ -46,7 +46,7 @@ $ go run .
 
 ## API Endpoint
 
-### 1. POST http://localhost:8080/api/publish
+### 1. POST http://localhost:8000/api/publish
 
 Request JSON:
 ```protobuf
@@ -63,13 +63,12 @@ Response JSON:
 }
 ```
 
-### 2. GET http://localhost:8080/api/uploaded_data?metadata_uri=[metadata_uri]&indices=1,2,3
+### 2. GET http://localhost:8000/api/uploaded_data?metadata_uri=[metadata_uri]&indices=1,2,3
 
 Response:
 ```protobuf
 {
     shard_size: number,
-    shard_count: number,
     shard_uris:[
         "uri1",
         "uri2",
@@ -84,7 +83,16 @@ Response:
 }
 ```
 
-### 3. Issue on API
+### 3. GET http://localhost:8000/api/get_blob?metadata_uri
+
+Response:
+```protobuf
+{
+    blob:"base64 encoded blob",
+}
+```
+
+### 4. Issue on API
 In case that  error occurs on API service, Endpoint returns HTTP 400 code and error msg.
 
 ## Testing Example for API Endpoint
@@ -110,7 +118,6 @@ GET http://localhost:8000/api/uploaded_data?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn4
 
 {
     "shard_size":7,
-    "shard_count":6,
     "shard_uris":[
         "/ipfs/QmYbgKse7s4S1qSrz139zsPECYSu9HbHuz9TBy7ZDEKi54",
         "/ipfs/QmWGhZL3maoUPbaYNauhq4BLL33xZdrf9Bi7xHUMFgtnV7",
@@ -125,3 +132,13 @@ GET http://localhost:8000/api/uploaded_data?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn4
         "A0+kyUqS08YRt34emU3OISrcCOWn3z7kCkBzftiKqog="
     ]
 }
+```
+
+### 3. Get blob data from metadata_uri
+```protobuf
+GET http://localhost:8000/api/get_blob?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
+
+{
+    "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA"
+}
+```
