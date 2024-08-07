@@ -39,6 +39,7 @@ type PublishRequest struct {
 }
 
 type PublishResponse struct {
+	TxHash      string `json:"tx_hash"`
 	MetadataUri string `json:"metadata_uri"`
 }
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/sunriselayer/sunrise-data/config"
 	"github.com/sunriselayer/sunrise-data/cosmosclient"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
@@ -41,7 +42,13 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	nodeClient, err := cosmosclient.New(ctx, cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX))
+	nodeClient, err := cosmosclient.New(
+		ctx,
+		cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX),
+		cosmosclient.WithHome(config.SUNRISE_HOME_DIR),
+		cosmosclient.WithFees(config.FEES),
+		cosmosclient.WithKeyringBackend(config.KEYRING_BACKEND),
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -95,10 +102,8 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Account `alice` was initialized during `ignite chain serve`
-	accountName := "validator"
 	// Get account from the keyring
-	account, err := nodeClient.Account(accountName)
+	account, err := nodeClient.Account(config.PUBLISHER_ACCOUNT)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -127,6 +132,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	// Print response from broadcasting a transaction
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(PublishResponse{
+		TxHash:      txResp.TxHash,
 		MetadataUri: metadataUri,
 	})
 }

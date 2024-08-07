@@ -4,34 +4,57 @@ This software "sunrise-data" is a program to publish and retrieve the BLOB data 
 
 ## Run sunrise chain node
 
-
 ## Run Local IPFS Node
+
 sunrise-data uses IPFS protocol to upload metadata and shard to IPFS.
+
 ### 1. Download and extract ipfs node binary
+
 We can download official prebuilt binaries from https://dist.ipfs.tech#kubo and Extract 'kubo_v0.29.0_linux-amd64.tar.gz" after download.
+
+```bash
+wget https://dist.ipfs.tech/kubo/v0.29.0/kubo_v0.29.0_darwin-amd64.tar.gz
+```
+
 ### 2. Install IPFS
-Run command as the follows.
+
+MacOS
+
+```bash
+mv ./kubo/ipfs /usr/local/bin/
+```
+
+Linux
+
 ```bash
 $ cd kubo_v0.29.0_linux-amd64/kubo
 $ sudo ./install.sh
 ```
+
 To check ipfs has been installed.
+
 ```bash
 $ ipfs version
 ipfs version 0.29.0
 ```
+
 ### 3. Initialize IPFS
+
 ```bash
 $ ipfs init --profile=lowpower
 ```
+
 ### 4. Run IPFS as daemon
+
 ```bash
 $ ipfs daemon
 ```
+
 You can visit http://localhost:8080/ipfs to check runing IPFS RPC.
 
 ## Store project
 This project need to store in directory stored "sunrise" codebase
+
 ```bash
 $ ls
   sunrise
@@ -39,6 +62,7 @@ $ ls
 ```
 
 ## Run API Service
+
 ```sh
 $ go mod tidy
 $ go run .
@@ -49,6 +73,7 @@ $ go run .
 ### 1. POST http://localhost:8000/api/publish
 
 Request JSON:
+
 ```protobuf
 {
     "blob": "Base64 Encoded string",
@@ -56,7 +81,9 @@ Request JSON:
     "protocol": "ipfs" or "arweave"
 }
 ```
+
 Response JSON:
+
 ```protobuf
 {
     metadata_uri: "metadata_uri"
@@ -66,6 +93,7 @@ Response JSON:
 ### 2. GET http://localhost:8000/api/uploaded_data?metadata_uri=[metadata_uri]&indices=1,2,3
 
 Response:
+
 ```protobuf
 {
     shard_size: number,
@@ -86,6 +114,7 @@ Response:
 ### 3. GET http://localhost:8000/api/get_blob?metadata_uri
 
 Response:
+
 ```protobuf
 {
     blob:"base64 encoded blob",
@@ -93,10 +122,13 @@ Response:
 ```
 
 ### 4. Issue on API
-In case that  error occurs on API service, Endpoint returns HTTP 400 code and error msg.
+
+In case that error occurs on API service, Endpoint returns HTTP 400 code and error msg.
 
 ## Testing Example for API Endpoint
+
 ### 1. Publsh
+
 ```protobuf
 POST http://localhost:8000/api/publish
 Request
@@ -113,6 +145,7 @@ Response
 ```
 
 ### 2. Uploaded Data API
+
 ```protobuf
 GET http://localhost:8000/api/uploaded_data?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
 
@@ -135,6 +168,7 @@ GET http://localhost:8000/api/uploaded_data?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn4
 ```
 
 ### 3. Get blob data from metadata_uri
+
 ```protobuf
 GET http://localhost:8000/api/get_blob?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
 
