@@ -48,6 +48,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		cosmosclient.WithAddressPrefix(Conf.Chain.AddrPrefix),
 		cosmosclient.WithKeyringBackend(cosmosaccount.KeyringBackend(Conf.Chain.KeyringBackend)),
 		cosmosclient.WithHome(Conf.Chain.HomePath),
+		cosmosclient.WithFees(Conf.Chain.Fees),
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -101,10 +102,9 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// Account `alice` was initialized during `ignite chain serve`
-	accountName := Conf.Chain.AdminAccount
+
 	// Get account from the keyring
-	account, err := nodeClient.Account(accountName)
+	account, err := nodeClient.Account(Conf.Chain.PublisherAccount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -133,6 +133,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	// Print response from broadcasting a transaction
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(PublishResponse{
+		TxHash:      txResp.TxHash,
 		MetadataUri: metadataUri,
 	})
 }

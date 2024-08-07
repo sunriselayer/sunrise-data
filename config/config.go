@@ -11,9 +11,10 @@ type Config struct {
 	}
 	Chain struct {
 		AddrPrefix     string `toml:"addr_prefix"`
-		AdminAccount   string `toml:"admin_account"`
+		PublisherAccount   string `toml:"publisher_account"`
 		HomePath       string `toml:"home_path"`
 		KeyringBackend string `toml:"keyring_backend"`
+		Fees string `toml:"fees"`
 	}
 }
 
