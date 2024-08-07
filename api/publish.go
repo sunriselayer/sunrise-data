@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sunriselayer/sunrise-data/cosmosclient"
+	"github.com/sunriselayer/sunrise-data/cosmosclient/cosmosaccount"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
 )
@@ -21,6 +22,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
+		fmt.Println("error")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -41,7 +43,12 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	nodeClient, err := cosmosclient.New(ctx, cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX))
+
+	nodeClient, err := cosmosclient.New(ctx,
+		cosmosclient.WithAddressPrefix(Conf.Chain.AddrPrefix),
+		cosmosclient.WithKeyringBackend(cosmosaccount.KeyringBackend(Conf.Chain.KeyringBackend)),
+		cosmosclient.WithHome(Conf.Chain.HomePath),
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -94,9 +101,8 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	// Account `alice` was initialized during `ignite chain serve`
-	accountName := "validator"
+	accountName := Conf.Chain.AdminAccount
 	// Get account from the keyring
 	account, err := nodeClient.Account(accountName)
 	if err != nil {
@@ -104,7 +110,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr, err := account.Address(SUNRISE_ADDR_PRIFIX)
+	addr, err := account.Address(Conf.Chain.AddrPrefix)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

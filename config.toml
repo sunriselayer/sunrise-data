@@ -1,0 +1,9 @@
+[api]
+port = 8000
+ipfs_api_url = "http://127.0.0.1:5001"
+
+[chain]
+addr_prefix="sunrise"
+keyring_backend="test"
+home_path="/home/ubuntu/.sunrise"
+admin_account="validator"

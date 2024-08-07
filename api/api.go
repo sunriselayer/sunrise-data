@@ -46,10 +46,10 @@ type GetBlobResponse struct {
 	Blob string `json:"blob"`
 }
 
-const SUNRISE_ADDR_PRIFIX string = "sunrise"
+var Conf config.Config
 
-func Handle() {
-	apiPort := config.API_PORT
+func Handle(conf config.Config) {
+	Conf = conf
 
 	r := mux.NewRouter()
 	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
@@ -60,8 +60,8 @@ func Handle() {
 	r.HandleFunc("/api/uploaded_data", UploadedData).Methods("GET")
 	r.HandleFunc("/api/get_blob", GetBlob).Methods("GET")
 
-	fmt.Println("Running Publisher API on localhost:", apiPort)
-	http.ListenAndServe(fmt.Sprintf(":%d", apiPort), r)
+	fmt.Println("Running Publisher API on localhost:", Conf.Api.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", Conf.Api.Port), r)
 
 }
 
@@ -117,8 +117,8 @@ func GetShardUris(inputData [][]byte, protocol string) ([]string, error) {
 func UploadToIpfs(inputData []byte) (string, error) {
 	var err error
 	var node *rpc.HttpApi
-	if config.IPFS_API_URL != "" {
-		node, err = rpc.NewURLApiWithClient(config.IPFS_API_URL, &http.Client{
+	if Conf.Api.IpfsApiUrl != "" {
+		node, err = rpc.NewURLApiWithClient(Conf.Api.IpfsApiUrl, &http.Client{
 			Transport: &http.Transport{
 				Proxy:             http.ProxyFromEnvironment,
 				DisableKeepAlives: true,
@@ -159,8 +159,8 @@ func GetDataFromIpfsOrArweave(uri string) ([]byte, error) {
 	if uri[:6] == "/ipfs/" { //ipfs
 		var err error
 		var node *rpc.HttpApi
-		if config.IPFS_API_URL != "" {
-			node, err = rpc.NewURLApiWithClient(config.IPFS_API_URL, &http.Client{
+		if Conf.Api.IpfsApiUrl != "" {
+			node, err = rpc.NewURLApiWithClient(Conf.Api.IpfsApiUrl, &http.Client{
 				Transport: &http.Transport{
 					Proxy:             http.ProxyFromEnvironment,
 					DisableKeepAlives: true,

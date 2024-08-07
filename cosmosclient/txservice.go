@@ -51,16 +51,16 @@ func (s TxService) Broadcast(ctx context.Context) (Response, error) {
 	if err != nil {
 		return Response{}, errors.WithStack(err)
 	}
-
 	resp, err := s.clientContext.BroadcastTx(txBytes)
 	if err := handleBroadcastResult(resp, err); err != nil {
 		return Response{}, err
 	}
 
-	res, err := s.client.WaitForTx(ctx, resp.TxHash)
-	if err != nil {
-		return Response{}, err
-	}
+	// res, err := s.client.WaitForTx(ctx, resp.TxHash)
+	// if err != nil {
+	// 	return Response{}, err
+	// }
+
 	// NOTE(tb) second and third parameters are omitted:
 	// - second parameter represents the tx and should be of type sdktypes.Any,
 	// but it is very ugly to decode, not sure if it's worth it (see sdk code
@@ -68,7 +68,7 @@ func (s TxService) Broadcast(ctx context.Context) (Response, error) {
 	// - third parameter represents the timestamp of the tx, which must be
 	// fetched from the block itself. So it requires another API call to
 	// fetch the block from res.Height, not sure if it's worth it too.
-	resp = sdktypes.NewResponseResultTx(res, nil, "")
+	// resp = sdktypes.NewResponseResultTx(res, nil, "")
 
 	return Response{
 		Codec:      s.clientContext.Codec,
