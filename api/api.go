@@ -53,7 +53,7 @@ func Handle() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to cau-sunrise-data API"))
+		w.Write([]byte("Welcome to sunrise-data API"))
 	}).Methods("GET")
 	r.HandleFunc("/api/publish", Publish).Methods("POST")
 

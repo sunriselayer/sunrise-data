@@ -31,11 +31,11 @@ $ ipfs daemon
 You can visit http://localhost:8080/ipfs to check runing IPFS RPC.
 
 ## Store project
-This project need to store in directory stored "cau-sunrise" codebase
+This project need to store in directory stored "sunrise" codebase
 ```bash
 $ ls
-  cau-sunrise
-  cau-sunrise-data
+  sunrise
+  sunrise-data
 ```
 
 ## Run API Service
