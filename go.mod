@@ -25,6 +25,7 @@ require (
 	github.com/ipfs/boxo v0.21.0
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/kubo v0.29.0
+	github.com/pelletier/go-toml v1.2.0
 	github.com/spf13/cobra v1.8.1
 	github.com/sunriselayer/sunrise v0.0.0-00010101000000-000000000000
 	github.com/sunriselayer/sunrise/x/da/erasurecoding v0.0.0-00010101000000-000000000000
