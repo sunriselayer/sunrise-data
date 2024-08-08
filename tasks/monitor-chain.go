@@ -12,12 +12,14 @@ import (
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	tmTypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmJsonRPCTypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/config"
 )
 
 // MonitorChain
-func MonitorChain() {
+func MonitorChain(txConfig client.TxConfig) {
 	ticker := time.NewTicker(5 * time.Second)
 	quit := make(chan struct{})
 	go func() {
@@ -26,31 +28,7 @@ func MonitorChain() {
 			case <-ticker.C:
 				currentBlock := GetLatestBlockHeight()
 				if currentBlock > latestBlockHeight+config.MONITOR_BLOCK_DELAY {
-					result, err := SearchTxHashHandle(config.COMETBFT_RPC, 0, 100, int64(latestBlockHeight))
-					if err != nil {
-						fmt.Println("Transaction search failed: ", err)
-					} else {
-						latestBlockHeight += 1
-						for _, tx := range result.Txs {
-							fmt.Println(tx.TxResult)
-							fmt.Println(tx.TxResult.Log)
-							// if err != nil {
-							// 	fmt.Println("Transaction decode failed: ", err)
-							// } else {
-							// 	msgs := decoded.GetMsgs()
-							// 	for _, msg := range msgs {
-							// 		switch msg := msg.(type) {
-							// 		case *datypes.MsgPublishData:
-							// 			fmt.Println(msg)
-							// 			metadataUri := msg.MetadataUri
-							// 			// TODO: check metadata uri status
-							// 			// TODO: verify metadata hash from ipfs
-							// 			SubmitFraudTx(metadataUri)
-							// 		}
-							// 	}
-							// }
-						}
-					}
+					MonitorBlock(txConfig, int64(latestBlockHeight))
 				}
 			case <-quit:
 				ticker.Stop()
@@ -58,6 +36,32 @@ func MonitorChain() {
 			}
 		}
 	}()
+}
+
+func MonitorBlock(txConfig client.TxConfig, latestBlockHeight int64) {
+	result, err := SearchTxHashHandle(config.COMETBFT_RPC, 0, 100, latestBlockHeight)
+	if err != nil {
+		fmt.Println("Transaction search failed: ", err)
+	} else {
+		latestBlockHeight += 1
+		for _, tx := range result.Txs {
+			decoded, err := txConfig.TxDecoder()(tx.Tx)
+			if err != nil {
+				fmt.Println("Transaction decode failed: ", err)
+			} else {
+				msgs := decoded.GetMsgs()
+				for _, msg := range msgs {
+					switch msg := msg.(type) {
+					case *datypes.MsgPublishData:
+						metadataUri := msg.MetadataUri
+						// TODO: check metadata uri status
+						// TODO: verify metadata hash from ipfs
+						SubmitFraudTx(metadataUri)
+					}
+				}
+			}
+		}
+	}
 }
 
 func SearchTxHashHandle(rpcAddr string, page int, limit int, txHeight int64) (*tmTypes.ResultTxSearch, error) {

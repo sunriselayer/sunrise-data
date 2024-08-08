@@ -18,6 +18,7 @@ func SubmitFraudTx(metadataUri string) bool {
 	// to create a post store response in txResp
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
 	if err != nil {
+		fmt.Println("Failed to broadcast MsgChallengeForFraud transaction: ", metadataUri, err)
 		return false
 	}
 	fmt.Println("TxHash:", txResp.TxHash)

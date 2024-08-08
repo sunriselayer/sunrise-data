@@ -16,10 +16,11 @@ var (
 
 // RunTasks is a function to run threads.
 func RunTasks() {
+	txConfig := GetTxConfig()
 	latestBlockHeight = GetLatestBlockHeight()
 	fmt.Println("latestBlockHeight ", latestBlockHeight)
 
-	go MonitorChain()
+	go MonitorChain(txConfig)
 }
 
 // MakeCometbftRPCRequest is a function to make GET request

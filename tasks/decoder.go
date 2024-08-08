@@ -12,8 +12,6 @@ import (
 )
 
 func GetTxConfig() client.TxConfig {
-	cmd.InitSDKConfig()
-
 	var (
 		txConfigOpts       tx.ConfigOptions
 		autoCliOpts        autocli.AppOptions

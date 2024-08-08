@@ -9,5 +9,5 @@ const (
 	KEYRING_BACKEND          = "test"
 	COMETBFT_RPC             = "http://0.0.0.0:26657"
 	SUNRISE_ADDR_PRIFIX      = "sunrise"
-	MONITOR_BLOCK_DELAY      = 1
+	MONITOR_BLOCK_DELAY      = 2
 )
