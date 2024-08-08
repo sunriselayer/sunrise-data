@@ -21,6 +21,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
+		fmt.Println("error")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

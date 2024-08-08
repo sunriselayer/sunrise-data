@@ -51,7 +51,6 @@ func (s TxService) Broadcast(ctx context.Context) (Response, error) {
 	if err != nil {
 		return Response{}, errors.WithStack(err)
 	}
-
 	resp, err := s.clientContext.BroadcastTx(txBytes)
 	if err := handleBroadcastResult(resp, err); err != nil {
 		return Response{}, err
@@ -61,6 +60,7 @@ func (s TxService) Broadcast(ctx context.Context) (Response, error) {
 	if err != nil {
 		return Response{}, err
 	}
+
 	// NOTE(tb) second and third parameters are omitted:
 	// - second parameter represents the tx and should be of type sdktypes.Any,
 	// but it is very ugly to decode, not sure if it's worth it (see sdk code

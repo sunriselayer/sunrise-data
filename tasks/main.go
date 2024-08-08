@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sunriselayer/sunrise-data/config"
+	"github.com/sunriselayer/sunrise-data/context"
 	"github.com/sunriselayer/sunrise-data/types"
 )
 
@@ -57,7 +57,7 @@ func MakeCometbftRPCRequest(rpcAddr string, url string, query string, res interf
 func GetLatestBlockHeight() int {
 	result := types.ChainStatus{}
 
-	success, _, _ := MakeCometbftRPCRequest(config.COMETBFT_RPC, "/status", "", &result)
+	success, _, _ := MakeCometbftRPCRequest(context.Config.Chain.CometbftRPC, "/status", "", &result)
 
 	if success {
 		blockHeight, err := strconv.Atoi(result.SyncInfo.LatestBlockHeight)

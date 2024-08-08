@@ -15,7 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
-	"github.com/sunriselayer/sunrise-data/config"
+	"github.com/sunriselayer/sunrise-data/context"
 )
 
 // MonitorChain
@@ -27,8 +27,9 @@ func MonitorChain(txConfig client.TxConfig) {
 			select {
 			case <-ticker.C:
 				currentBlock := GetLatestBlockHeight()
-				if currentBlock > latestBlockHeight+config.MONITOR_BLOCK_DELAY {
+				if currentBlock > latestBlockHeight+context.Config.Chain.VoteExtensionPeriod {
 					MonitorBlock(txConfig, int64(latestBlockHeight))
+					latestBlockHeight += 1
 				}
 			case <-quit:
 				ticker.Stop()
@@ -38,12 +39,11 @@ func MonitorChain(txConfig client.TxConfig) {
 	}()
 }
 
-func MonitorBlock(txConfig client.TxConfig, latestBlockHeight int64) {
-	result, err := SearchTxHashHandle(config.COMETBFT_RPC, 0, 100, latestBlockHeight)
+func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
+	result, err := SearchTxHashHandle(context.Config.Chain.CometbftRPC, 0, 100, syncBlock)
 	if err != nil {
 		fmt.Println("Transaction search failed: ", err)
 	} else {
-		latestBlockHeight += 1
 		for _, tx := range result.Txs {
 			decoded, err := txConfig.TxDecoder()(tx.Tx)
 			if err != nil {

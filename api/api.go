@@ -18,7 +18,7 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/kubo/client/rpc"
 
-	"github.com/sunriselayer/sunrise-data/config"
+	scontext "github.com/sunriselayer/sunrise-data/context"
 )
 
 const (
@@ -48,8 +48,6 @@ type GetBlobResponse struct {
 }
 
 func Handle() {
-	apiPort := config.API_PORT
-
 	r := mux.NewRouter()
 	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Welcome to sunrise-data API"))
@@ -59,8 +57,8 @@ func Handle() {
 	r.HandleFunc("/api/uploaded_data", UploadedData).Methods("GET")
 	r.HandleFunc("/api/get_blob", GetBlob).Methods("GET")
 
-	fmt.Println("Running Publisher API on localhost:", apiPort)
-	http.ListenAndServe(fmt.Sprintf(":%d", apiPort), r)
+	fmt.Println("Running Publisher API on localhost:", scontext.Config.Api.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", scontext.Config.Api.Port), r)
 
 }
 
@@ -116,8 +114,8 @@ func GetShardUris(inputData [][]byte, protocol string) ([]string, error) {
 func UploadToIpfs(inputData []byte) (string, error) {
 	var err error
 	var node *rpc.HttpApi
-	if config.IPFS_API_URL != "" {
-		node, err = rpc.NewURLApiWithClient(config.IPFS_API_URL, &http.Client{
+	if scontext.Config.Api.IpfsApiUrl != "" {
+		node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, &http.Client{
 			Transport: &http.Transport{
 				Proxy:             http.ProxyFromEnvironment,
 				DisableKeepAlives: true,
@@ -158,8 +156,8 @@ func GetDataFromIpfsOrArweave(uri string) ([]byte, error) {
 	if uri[:6] == "/ipfs/" { //ipfs
 		var err error
 		var node *rpc.HttpApi
-		if config.IPFS_API_URL != "" {
-			node, err = rpc.NewURLApiWithClient(config.IPFS_API_URL, &http.Client{
+		if scontext.Config.Api.IpfsApiUrl != "" {
+			node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, &http.Client{
 				Transport: &http.Transport{
 					Proxy:             http.ProxyFromEnvironment,
 					DisableKeepAlives: true,
