@@ -134,14 +134,14 @@ In case that error occurs on API service, Endpoint returns HTTP 400 code and err
 POST http://localhost:8000/api/publish
 Request
 {
-    "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA",   // "12345678901234567890"
-    "shard_count_half": 3,
+    "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=",   // "12345678901234567890"
+    "shard_count_half": 10,
     "protocol": "ipfs" // or "arweave"
 }
 
 Response
 {
-    metadata_uri: "/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C"
+    metadata_uri: "/ipfs/QmPXFt19HTkGjoZcbavLEgYYsuPm2xJR7hkhQxtRgPURMU"
 }
 ```
 

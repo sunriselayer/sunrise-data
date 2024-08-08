@@ -1,10 +1,29 @@
 package config
 
-const (
-	API_PORT          uint = 8000
-	IPFS_API_URL           = ""
-	PUBLISHER_ACCOUNT      = "validator"
-	SUNRISE_HOME_DIR       = "/Users/admin/.sunrise"
-	FEES                   = "10000uvrise"
-	KEYRING_BACKEND        = "test"
+import (
+	toml "github.com/pelletier/go-toml"
 )
+
+type Config struct {
+	Api struct {
+		Port       int    `toml:"port"`
+		IpfsApiUrl string `toml:"ipfs_api_url"`
+	}
+	Chain struct {
+		AddrPrefix     string `toml:"addr_prefix"`
+		PublisherAccount   string `toml:"publisher_account"`
+		HomePath       string `toml:"home_path"`
+		KeyringBackend string `toml:"keyring_backend"`
+		Fees string `toml:"fees"`
+	}
+}
+
+func LoadConfig() (*Config, error) {
+	config := &Config{}
+	configTree, err := toml.LoadFile("config.toml")
+	if err != nil {
+		return nil, err
+	}
+	err = configTree.Unmarshal(config)
+	return config, err
+}

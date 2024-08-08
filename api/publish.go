@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sunriselayer/sunrise-data/config"
 	"github.com/sunriselayer/sunrise-data/cosmosclient"
+	"github.com/sunriselayer/sunrise-data/cosmosclient/cosmosaccount"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
 )
@@ -22,6 +22,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
+		fmt.Println("error")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -42,12 +43,12 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := context.Background()
-	nodeClient, err := cosmosclient.New(
-		ctx,
-		cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX),
-		cosmosclient.WithHome(config.SUNRISE_HOME_DIR),
-		cosmosclient.WithFees(config.FEES),
-		cosmosclient.WithKeyringBackend(config.KEYRING_BACKEND),
+
+	nodeClient, err := cosmosclient.New(ctx,
+		cosmosclient.WithAddressPrefix(Conf.Chain.AddrPrefix),
+		cosmosclient.WithKeyringBackend(cosmosaccount.KeyringBackend(Conf.Chain.KeyringBackend)),
+		cosmosclient.WithHome(Conf.Chain.HomePath),
+		cosmosclient.WithFees(Conf.Chain.Fees),
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -103,13 +104,13 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get account from the keyring
-	account, err := nodeClient.Account(config.PUBLISHER_ACCOUNT)
+	account, err := nodeClient.Account(Conf.Chain.PublisherAccount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	addr, err := account.Address(SUNRISE_ADDR_PRIFIX)
+	addr, err := account.Address(Conf.Chain.AddrPrefix)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
