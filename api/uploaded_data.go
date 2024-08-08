@@ -25,8 +25,7 @@ func UploadedData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	metadata := types.Metadata{}
-
-	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
+	if err := metadata.Unmarshal(metadataBytes); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
