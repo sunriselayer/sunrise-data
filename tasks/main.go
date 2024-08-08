@@ -69,7 +69,3 @@ func GetLatestBlockHeight() int {
 
 	return 0
 }
-
-func GetTxDecoder() {
-
-}

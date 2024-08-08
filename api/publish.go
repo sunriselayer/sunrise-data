@@ -1,16 +1,15 @@
 package api
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/sunriselayer/sunrise-data/config"
-	"github.com/sunriselayer/sunrise-data/cosmosclient"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
+
+	"github.com/sunriselayer/sunrise-data/context"
 )
 
 func Publish(w http.ResponseWriter, r *http.Request) {
@@ -41,20 +40,8 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
-	nodeClient, err := cosmosclient.New(
-		ctx,
-		cosmosclient.WithAddressPrefix(SUNRISE_ADDR_PRIFIX),
-		cosmosclient.WithHome(config.SUNRISE_HOME_DIR),
-		cosmosclient.WithFees(config.FEES),
-		cosmosclient.WithKeyringBackend(config.KEYRING_BACKEND),
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	queryClient := types.NewQueryClient(nodeClient.Context())
-	queryParamResponse, err := queryClient.Params(ctx, &types.QueryParamsRequest{})
+	queryClient := types.NewQueryClient(context.NodeClient.Context())
+	queryParamResponse, err := queryClient.Params(context.Ctx, &types.QueryParamsRequest{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -102,28 +89,15 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get account from the keyring
-	account, err := nodeClient.Account(config.PUBLISHER_ACCOUNT)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	addr, err := account.Address(SUNRISE_ADDR_PRIFIX)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	// Define a message to create a post
 	msg := &types.MsgPublishData{
-		Sender:            addr,
+		Sender:            context.Addr,
 		MetadataUri:       metadataUri,
 		ShardDoubleHashes: byteSlicesToDoubleHashes(shards),
 	}
 	// Broadcast a transaction from account `alice` with the message
 	// to create a post store response in txResp
-	txResp, err := nodeClient.BroadcastTx(ctx, account, msg)
+	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

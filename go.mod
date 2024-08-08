@@ -6,23 +6,33 @@ replace (
 	// sunrise-core
 	github.com/cometbft/cometbft => github.com/sunriselayer/sunrise-core v0.0.5-cmt-v0.38.2
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.17.0
+	github.com/prometheus/common => github.com/prometheus/common v0.45.0
+
 	github.com/sunriselayer/sunrise => ../sunrise
 	github.com/sunriselayer/sunrise/x/da/erasurecoding => ../sunrise/x/da/erasurecoding
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20240528184218-531527333157
 	google.golang.org/genproto/googleapis/rpc/status => google.golang.org/genproto v0.0.0-20240528184218-531527333157
 )
 
+replace (
+	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
+	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+	// replace broken goleveldb
+	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
+)
+
 require (
 	cosmossdk.io/client/v2 v2.0.0-beta.1
 	cosmossdk.io/depinject v1.0.0-alpha.4
 	cosmossdk.io/log v1.3.1
-	github.com/99designs/keyring v1.2.2
+	github.com/99designs/keyring v1.2.1
 	github.com/cockroachdb/errors v1.11.1
-	github.com/cometbft/cometbft v0.38.9
+	github.com/cometbft/cometbft v0.38.6
 	github.com/consensys/gnark-crypto v0.12.2-0.20240215234832-d72fcb379d3e
-	github.com/cosmos/cosmos-sdk v0.50.8
+	github.com/cosmos/cosmos-sdk v0.50.3
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/gogoproto v1.5.0
+	github.com/cosmos/gogoproto v1.4.12
 	github.com/everFinance/goar v1.6.3
 	github.com/gorilla/mux v1.8.1
 	github.com/ipfs/boxo v0.21.0
@@ -223,6 +233,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/miekg/dns v1.1.61 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
@@ -243,7 +254,6 @@ require (
 	github.com/multiformats/go-multihash v0.2.3 // indirect
 	github.com/multiformats/go-multistream v0.5.0 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
-	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
@@ -258,7 +268,7 @@ require (
 	github.com/polydawn/refmt v0.89.0 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.55.0 // indirect
+	github.com/prometheus/common v0.54.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-
 	"net/http"
 
 	native_mimc "github.com/consensys/gnark-crypto/ecc/bn254/fr/mimc"
@@ -18,6 +17,7 @@ import (
 	"github.com/ipfs/boxo/path"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/kubo/client/rpc"
+
 	"github.com/sunriselayer/sunrise-data/config"
 )
 
@@ -46,8 +46,6 @@ type PublishResponse struct {
 type GetBlobResponse struct {
 	Blob string `json:"blob"`
 }
-
-const SUNRISE_ADDR_PRIFIX string = "sunrise"
 
 func Handle() {
 	apiPort := config.API_PORT

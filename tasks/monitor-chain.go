@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,75 +10,61 @@ import (
 	"time"
 
 	tmjson "github.com/cometbft/cometbft/libs/json"
-	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 	tmTypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmJsonRPCTypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
-	"github.com/cometbft/cometbft/types"
 
 	"github.com/sunriselayer/sunrise-data/config"
 )
 
 // MonitorChain
 func MonitorChain() {
-	fmt.Println("Monitor Chain")
-	client, err := rpchttp.New(config.COMETBFT_RPC, "/websocket")
-	if err != nil {
-		fmt.Print("1", err)
-		return
-	}
-
-	err = client.Start()
-	if err != nil {
-		fmt.Print("2", err)
-		return
-	}
-
-	defer client.Stop()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	query := "tm.event = 'Tx' AND tx.height = 3"
-	txs, err := client.Subscribe(ctx, "test-client", query)
-	if err != nil {
-		fmt.Print("3", err)
-		return
-	}
-	fmt.Print("4", txs)
-
+	ticker := time.NewTicker(5 * time.Second)
+	quit := make(chan struct{})
 	go func() {
-		fmt.Print("4", txs)
-		for e := range txs {
-			fmt.Println("got ", e.Data.(types.EventDataTx))
+		for {
+			select {
+			case <-ticker.C:
+				currentBlock := GetLatestBlockHeight()
+				if currentBlock > latestBlockHeight+config.MONITOR_BLOCK_DELAY {
+					result, err := SearchTxHashHandle(config.COMETBFT_RPC, 0, 100, int64(latestBlockHeight))
+					if err != nil {
+						fmt.Println("Transaction search failed: ", err)
+					} else {
+						latestBlockHeight += 1
+						for _, tx := range result.Txs {
+							fmt.Println(tx.TxResult)
+							fmt.Println(tx.TxResult.Log)
+							// if err != nil {
+							// 	fmt.Println("Transaction decode failed: ", err)
+							// } else {
+							// 	msgs := decoded.GetMsgs()
+							// 	for _, msg := range msgs {
+							// 		switch msg := msg.(type) {
+							// 		case *datypes.MsgPublishData:
+							// 			fmt.Println(msg)
+							// 			metadataUri := msg.MetadataUri
+							// 			// TODO: check metadata uri status
+							// 			// TODO: verify metadata hash from ipfs
+							// 			SubmitFraudTx(metadataUri)
+							// 		}
+							// 	}
+							// }
+						}
+					}
+				}
+			case <-quit:
+				ticker.Stop()
+				return
+			}
 		}
 	}()
 }
 
-func SearchTxHashHandle(rpcAddr string, sender string, recipient string, txType string, page int, limit int, txMinHeight int64, txMaxHeight int64, txHash string) (*tmTypes.ResultTxSearch, error) {
+func SearchTxHashHandle(rpcAddr string, page int, limit int, txHeight int64) (*tmTypes.ResultTxSearch, error) {
 	var events = make([]string, 0, 5)
 
-	if sender != "" {
-		events = append(events, fmt.Sprintf("transfer.sender='%s'", sender))
-	}
-
-	if recipient != "" {
-		events = append(events, fmt.Sprintf("transfer.recipient='%s'", recipient))
-	}
-
-	if txType != "all" && txType != "" {
-		events = append(events, fmt.Sprintf("message.action='%s'", txType))
-	}
-
-	if txHash != "" {
-		events = append(events, fmt.Sprintf("tx.hash='%s'", txHash))
-	}
-
-	if txMinHeight >= 0 {
-		events = append(events, fmt.Sprintf("tx.height>=%d", txMinHeight))
-	}
-
-	if txMaxHeight >= 0 {
-		events = append(events, fmt.Sprintf("tx.height<=%d", txMaxHeight))
-	}
+	events = append(events, fmt.Sprintf("tx.height=%d", txHeight))
+	events = append(events, "message.action='/sunrise.da.MsgPublishData'")
 
 	// search transactions
 	endpoint := fmt.Sprintf("%s/tx_search?query=\"%s\"&page=%d&&per_page=%d&order_by=\"desc\"", rpcAddr, strings.Join(events, "%20AND%20"), page, limit)
