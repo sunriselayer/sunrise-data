@@ -150,24 +150,24 @@ Request
 
 Response
 {
-    metadata_uri: "/ipfs/QmPXFt19HTkGjoZcbavLEgYYsuPm2xJR7hkhQxtRgPURMU"
+    metadata_uri: "ipfs://QmPXFt19HTkGjoZcbavLEgYYsuPm2xJR7hkhQxtRgPURMU"
 }
 ```
 
 ### 2. Shard Hashes API
 
 ```protobuf
-GET http://localhost:8000/api/shard_hashes?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
+GET http://localhost:8000/api/shard_hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
 
 {
     "shard_size":7,
     "shard_uris":[
-        "/ipfs/QmYbgKse7s4S1qSrz139zsPECYSu9HbHuz9TBy7ZDEKi54",
-        "/ipfs/QmWGhZL3maoUPbaYNauhq4BLL33xZdrf9Bi7xHUMFgtnV7",
-        "/ipfs/QmapUiNguJpqfuWdxtUJ1GPp5264yCLN5aMJqgWJvxdaEu",
-        "/ipfs/QmXLtGEkGVcRZukdaftW3M979SPWDaZidt6EpjkEk4SjCv",
-        "/ipfs/QmQzrZhSG3hAfwfJinMjiwC66MnJV6LxaVtLNKCjWaRdmj",
-        "/ipfs/Qmd2tYLCM7YecjoLA9ppJNPRgQnshVfdoiPwnux3WiyS2H"
+        "ipfs://QmYbgKse7s4S1qSrz139zsPECYSu9HbHuz9TBy7ZDEKi54",
+        "ipfs://QmWGhZL3maoUPbaYNauhq4BLL33xZdrf9Bi7xHUMFgtnV7",
+        "ipfs://QmapUiNguJpqfuWdxtUJ1GPp5264yCLN5aMJqgWJvxdaEu",
+        "ipfs://QmXLtGEkGVcRZukdaftW3M979SPWDaZidt6EpjkEk4SjCv",
+        "ipfs://QmQzrZhSG3hAfwfJinMjiwC66MnJV6LxaVtLNKCjWaRdmj",
+        "ipfs://Qmd2tYLCM7YecjoLA9ppJNPRgQnshVfdoiPwnux3WiyS2H"
     ],
     "shard_hashes":[
         "JvpetAD7cXIa6zMnWYOyOCfYD+g68xbHBVU5CEKz9OI=",
@@ -180,7 +180,7 @@ GET http://localhost:8000/api/shard_hashes?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47
 ### 3. Get blob data from metadata_uri
 
 ```protobuf
-GET http://localhost:8000/api/get_blob?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
+GET http://localhost:8000/api/get_blob?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
 
 {
     "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA"
