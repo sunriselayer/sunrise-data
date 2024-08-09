@@ -68,6 +68,18 @@ $ go mod tidy
 $ go run .
 ```
 
+- Run daemon
+```sh
+$ make dev
+```
+
+- Install daemon
+```sh
+$ make install
+$ sunrise-data
+```
+
+
 ## API Endpoint
 
 ### 1. POST http://localhost:8000/api/publish
