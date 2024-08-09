@@ -90,7 +90,7 @@ Response JSON:
 }
 ```
 
-### 2. GET http://localhost:8000/api/uploaded_data?metadata_uri=[metadata_uri]&indices=1,2,3
+### 2. GET http://localhost:8000/api/shard_hashes?metadata_uri=[metadata_uri]&indices=1,2,3
 
 Response:
 
@@ -144,10 +144,10 @@ Response
 }
 ```
 
-### 2. Uploaded Data API
+### 2. Shard Hashes API
 
 ```protobuf
-GET http://localhost:8000/api/uploaded_data?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
+GET http://localhost:8000/api/shard_hashes?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
 
 {
     "shard_size":7,
@@ -176,3 +176,10 @@ GET http://localhost:8000/api/get_blob?metadata_uri=/ipfs/QmPdJ4GtFRvpkbsn47d1Hb
     "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA"
 }
 ```
+
+## Monitoring Service
+
+- Search transactions
+- Verify shard double hashes in published data
+- Submit MsgChallengeForFraud
+- Submit MsgSubmitProof
