@@ -20,6 +20,11 @@ type Config struct {
 	}
 }
 
+const (
+	IPFS_PROTOCOL    = "ipfs"
+	ARWEAVE_PROTOCOL = "arweave"
+)
+
 func LoadConfig() (*Config, error) {
 	config := &Config{}
 	configTree, err := toml.LoadFile("config.toml")

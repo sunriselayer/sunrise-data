@@ -3,13 +3,16 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
+	"github.com/rs/zerolog/log"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
 
+	"github.com/sunriselayer/sunrise-data/config"
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/publisher"
+	"github.com/sunriselayer/sunrise-data/utils"
 )
 
 func Publish(w http.ResponseWriter, r *http.Request) {
@@ -21,21 +24,21 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
-		fmt.Println("error")
+		log.Print("Failed to decode Blob", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	protocol := IPFS_PROTOCOL
-	if req.Protocol == IPFS_PROTOCOL {
-		protocol = IPFS_PROTOCOL
-	} else if req.Protocol == ARWEAVE_PROTOCOL {
-		protocol = ARWEAVE_PROTOCOL
+	protocol := config.IPFS_PROTOCOL
+	if req.Protocol == config.IPFS_PROTOCOL {
+		protocol = config.IPFS_PROTOCOL
+	} else if req.Protocol == config.ARWEAVE_PROTOCOL {
+		protocol = config.ARWEAVE_PROTOCOL
 	} else {
 		http.Error(w, "Invalid Protocol", http.StatusBadRequest)
 		return
 	}
 
-	recoveredDataHash, err := HashSha256(blobBytes)
+	recoveredDataHash, err := utils.HashSha256(blobBytes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -57,7 +60,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ShardSize is bigger than Max_ShardSize", http.StatusBadRequest)
 		return
 	}
-	shardUris, err := GetShardUris(shards, protocol)
+	shardUris, err := publisher.GetShardUris(shards, protocol)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -76,14 +79,14 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 
 	//upload ipfs
 	metadataUri := ""
-	if protocol == IPFS_PROTOCOL {
-		metadataUri, err = UploadToIpfs(metadataBytes)
+	if protocol == config.IPFS_PROTOCOL {
+		metadataUri, err = publisher.UploadToIpfs(metadataBytes)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	} else {
-		metadataUri, err = UploadToArweave(metadataBytes)
+		metadataUri, err = publisher.UploadToArweave(metadataBytes)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -94,7 +97,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	msg := &types.MsgPublishData{
 		Sender:            context.Addr,
 		MetadataUri:       metadataUri,
-		ShardDoubleHashes: byteSlicesToDoubleHashes(shards),
+		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
 	}
 	// Broadcast a transaction from account `alice` with the message
 	// to create a post store response in txResp
@@ -103,7 +106,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("TxHash:", txResp.TxHash)
+	log.Print("TxHash:", txResp.TxHash)
 	// Print response from broadcasting a transaction
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(PublishResponse{

@@ -39,6 +39,7 @@ require (
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/kubo v0.29.0
 	github.com/pelletier/go-toml v1.2.0
+	github.com/rs/zerolog v1.32.0
 	github.com/spf13/cobra v1.8.1
 	github.com/sunriselayer/sunrise v0.0.0-00010101000000-000000000000
 	github.com/sunriselayer/sunrise/x/da/erasurecoding v0.0.0-00010101000000-000000000000
@@ -274,7 +275,6 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rs/cors v1.11.0 // indirect
-	github.com/rs/zerolog v1.32.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/samber/lo v1.45.0 // indirect
