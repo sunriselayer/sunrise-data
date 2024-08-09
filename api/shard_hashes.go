@@ -8,9 +8,12 @@ import (
 	"strings"
 
 	"github.com/sunriselayer/sunrise/x/da/types"
+
+	"github.com/sunriselayer/sunrise-data/retriever"
+	"github.com/sunriselayer/sunrise-data/utils"
 )
 
-func UploadedData(w http.ResponseWriter, r *http.Request) {
+func ShardHashes(w http.ResponseWriter, r *http.Request) {
 	metadataUri := r.URL.Query().Get("metadata_uri")
 	indices := r.URL.Query().Get("indices")
 	indicesList := strings.Split(indices, ",")
@@ -18,7 +21,7 @@ func UploadedData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid query parameter", http.StatusBadRequest)
 		return
 	}
-	metadataBytes, err := GetDataFromIpfsOrArweave(metadataUri)
+	metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -38,12 +41,12 @@ func UploadedData(w http.ResponseWriter, r *http.Request) {
 		}
 		if iIndex < len(metadata.ShardUris) {
 			shardUri := metadata.ShardUris[iIndex]
-			shardData, err := GetDataFromIpfsOrArweave(shardUri)
+			shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(HashMimc(shardData)))
+			shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(shardData)))
 		}
 	}
 

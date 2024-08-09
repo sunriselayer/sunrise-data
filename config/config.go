@@ -10,11 +10,13 @@ type Config struct {
 		IpfsApiUrl string `toml:"ipfs_api_url"`
 	}
 	Chain struct {
-		AddrPrefix     string `toml:"addr_prefix"`
-		PublisherAccount   string `toml:"publisher_account"`
-		HomePath       string `toml:"home_path"`
-		KeyringBackend string `toml:"keyring_backend"`
-		Fees string `toml:"fees"`
+		AddrPrefix          string `toml:"addr_prefix"`
+		PublisherAccount    string `toml:"publisher_account"`
+		HomePath            string `toml:"home_path"`
+		KeyringBackend      string `toml:"keyring_backend"`
+		Fees                string `toml:"fees"`
+		CometbftRPC         string `toml:"cometbft_rpc"`
+		VoteExtensionPeriod int    `toml:"vote_extension_period"`
 	}
 }
 

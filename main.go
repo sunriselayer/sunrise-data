@@ -7,6 +7,8 @@ import (
 	//  "github.com/sunriselayer/sunrise-data/cmd"
 	"github.com/sunriselayer/sunrise-data/api"
 	"github.com/sunriselayer/sunrise-data/config"
+	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/tasks"
 )
 
 func main() {
@@ -16,5 +18,9 @@ func main() {
 		panic(err)
 	}
 
-	api.Handle(*config)
+	context.GetContext(*config)
+
+	tasks.RunTasks()
+
+	api.Handle()
 }

@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "dbb6c640-9567-4b90-8c33-7bdd1423e779",
+		"name": "Sunrise",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "http://localhost:8000/api/publish",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"blob\": \"YXNka2ZsYXNrZGZ3b2VncGl3ZW9wcmlxdXdlcmlvcXdldWl0b2Vwcmt0a2xma2Fwc2RvZmlvYXNkZndlZ3dlZw==\",\n    \"shard_count_half\": 10,\n    \"protocol\": \"ipfs\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/publish",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"publish"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8000/api/shard_hashes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/shard_hashes?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"shard_hashes"
+					],
+					"query": [
+						{
+							"key": "metadata_uri",
+							"value": "ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8000/api/get_blob",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/get_blob?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"get_blob"
+					],
+					"query": [
+						{
+							"key": "metadata_uri",
+							"value": "ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
