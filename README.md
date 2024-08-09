@@ -63,10 +63,8 @@ $ ls
 
 ## Run API Service
 
-```sh
-$ go mod tidy
-$ go run .
-```
+- Prepare config.toml
+  Copy config.default.toml to config.toml and replace your configurations.
 
 - Run daemon
 ```sh
