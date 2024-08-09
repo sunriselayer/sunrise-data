@@ -35,12 +35,12 @@
 			"response": []
 		},
 		{
-			"name": "http://localhost:8000/api/uploaded_data",
+			"name": "http://localhost:8000/api/shard_hashes",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/api/uploaded_data?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
+					"raw": "http://localhost:8000/api/shard_hashes?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -48,7 +48,7 @@
 					"port": "8000",
 					"path": [
 						"api",
-						"uploaded_data"
+						"shard_hashes"
 					],
 					"query": [
 						{

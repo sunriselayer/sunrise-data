@@ -22,7 +22,6 @@ import (
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
-// MonitorChain
 func MonitorChain(txConfig client.TxConfig) {
 	ticker := time.NewTicker(5 * time.Second)
 	quit := make(chan struct{})
@@ -47,72 +46,74 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 	result, err := SearchTxHashHandle(context.Config.Chain.CometbftRPC, 0, 100, syncBlock)
 	if err != nil {
 		log.Print("Transaction search failed: ", err)
-	} else {
-		for _, tx := range result.Txs {
-			decoded, err := txConfig.TxDecoder()(tx.Tx)
-			if err != nil {
-				log.Print("Transaction decode failed: ", err)
-			} else {
-				msgs := decoded.GetMsgs()
-				for _, msg := range msgs {
-					switch msg := msg.(type) {
-					case *datypes.MsgPublishData:
-						metadataUri := msg.MetadataUri
+		return
+	}
 
-						// For testing fraud TX submission
-						// SubmitFraudTx(metadataUri)
-						// continue
+	for _, tx := range result.Txs {
+		decoded, err := txConfig.TxDecoder()(tx.Tx)
+		if err != nil {
+			log.Print("Transaction decode failed: ", err)
+			continue
+		}
 
-						// check metadata uri status
-						publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
-						if err != nil {
-							log.Print("Failed to query metadata from on-chain: ", err)
-							continue
-						}
+		msgs := decoded.GetMsgs()
+		for _, msg := range msgs {
+			switch msg := msg.(type) {
+			case *datypes.MsgPublishData:
+				metadataUri := msg.MetadataUri
 
-						publishedData := publishedDataResponse.Data
-						if publishedData.Status != "vote_extension" {
-							log.Print("Not passed the vote extension yet")
-							continue
-						}
+				// For testing fraud TX submission
+				// SubmitFraudTx(metadataUri)
+				// continue
 
-						// verify shard data
-						metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
-						if err != nil {
-							log.Print("Failed to get metadata: ", err)
-							SubmitFraudTx(metadataUri)
-							continue
-						}
+				// check metadata uri status
+				publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
+				if err != nil {
+					log.Print("Failed to query metadata from on-chain: ", err)
+					continue
+				}
 
-						metadata := datypes.Metadata{}
-						if err := metadata.Unmarshal(metadataBytes); err != nil {
-							log.Print("Failed to decode metadata: ", err)
-							SubmitFraudTx(metadataUri)
-							continue
-						}
+				publishedData := publishedDataResponse.Data
+				if publishedData.Status != "vote_extension" {
+					log.Print("Not passed the vote extension yet")
+					continue
+				}
 
-						if len(publishedData.ShardDoubleHashes) != len(metadata.ShardUris) {
-							log.Print("Incorrect shard data count: ", err)
-							SubmitFraudTx(metadataUri)
-							continue
-						}
+				// verify shard data
+				metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
+				if err != nil {
+					log.Print("Failed to get metadata: ", err)
+					SubmitFraudTx(metadataUri)
+					continue
+				}
 
-						for index := 0; index < len(publishedData.ShardDoubleHashes); index++ {
-							shardUri := metadata.ShardUris[index]
-							shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
-							if err != nil {
-								log.Print("Failed to get shard data: ", err)
-								SubmitFraudTx(metadataUri)
-								break
-							}
-							doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
+				metadata := datypes.Metadata{}
+				if err := metadata.Unmarshal(metadataBytes); err != nil {
+					log.Print("Failed to decode metadata: ", err)
+					SubmitFraudTx(metadataUri)
+					continue
+				}
 
-							if doubleShardHash != base64.StdEncoding.EncodeToString(publishedData.ShardDoubleHashes[index]) {
-								log.Print("Incorrect shard data: ", index)
-								SubmitFraudTx(metadataUri)
-								break
-							}
-						}
+				if len(publishedData.ShardDoubleHashes) != len(metadata.ShardUris) {
+					log.Print("Incorrect shard data count: ", err)
+					SubmitFraudTx(metadataUri)
+					continue
+				}
+
+				for index := 0; index < len(publishedData.ShardDoubleHashes); index++ {
+					shardUri := metadata.ShardUris[index]
+					shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
+					if err != nil {
+						log.Print("Failed to get shard data: ", err)
+						SubmitFraudTx(metadataUri)
+						break
+					}
+					doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
+
+					if doubleShardHash != base64.StdEncoding.EncodeToString(publishedData.ShardDoubleHashes[index]) {
+						log.Print("Incorrect shard data: ", index)
+						SubmitFraudTx(metadataUri)
+						break
 					}
 				}
 			}

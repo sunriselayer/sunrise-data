@@ -10,7 +10,7 @@ import (
 	"github.com/ipfs/boxo/files"
 	"github.com/ipfs/kubo/client/rpc"
 
-	"github.com/sunriselayer/sunrise-data/config"
+	"github.com/sunriselayer/sunrise-data/consts"
 	scontext "github.com/sunriselayer/sunrise-data/context"
 )
 
@@ -18,7 +18,7 @@ import (
 func GetShardUris(inputData [][]byte, protocol string) ([]string, error) {
 	var shardUris []string
 	for _, data := range inputData {
-		if protocol == config.IPFS_PROTOCOL {
+		if protocol == consts.IPFS_PROTOCOL {
 			shardUri, err := UploadToIpfs(data)
 			if err != nil {
 				return nil, err
@@ -62,6 +62,7 @@ func UploadToIpfs(inputData []byte) (string, error) {
 
 	return "ipfs://" + cidFile.RootCid().String(), nil
 }
+
 func UploadToArweave(inputData []byte) (string, error) {
 	wallet, err := goar.NewWalletFromPath("../keyfile.json", "https://arweave.net")
 	if err != nil {

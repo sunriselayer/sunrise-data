@@ -9,7 +9,7 @@ import (
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
 
-	"github.com/sunriselayer/sunrise-data/config"
+	"github.com/sunriselayer/sunrise-data/consts"
 	"github.com/sunriselayer/sunrise-data/context"
 	"github.com/sunriselayer/sunrise-data/publisher"
 	"github.com/sunriselayer/sunrise-data/utils"
@@ -28,11 +28,11 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	protocol := config.IPFS_PROTOCOL
-	if req.Protocol == config.IPFS_PROTOCOL {
-		protocol = config.IPFS_PROTOCOL
-	} else if req.Protocol == config.ARWEAVE_PROTOCOL {
-		protocol = config.ARWEAVE_PROTOCOL
+	protocol := consts.IPFS_PROTOCOL
+	if req.Protocol == consts.IPFS_PROTOCOL {
+		protocol = consts.IPFS_PROTOCOL
+	} else if req.Protocol == consts.ARWEAVE_PROTOCOL {
+		protocol = consts.ARWEAVE_PROTOCOL
 	} else {
 		http.Error(w, "Invalid Protocol", http.StatusBadRequest)
 		return
@@ -79,7 +79,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 
 	//upload ipfs
 	metadataUri := ""
-	if protocol == config.IPFS_PROTOCOL {
+	if protocol == consts.IPFS_PROTOCOL {
 		metadataUri, err = publisher.UploadToIpfs(metadataBytes)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

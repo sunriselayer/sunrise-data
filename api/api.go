@@ -38,7 +38,7 @@ func Handle() {
 	}).Methods("GET")
 	r.HandleFunc("/api/publish", Publish).Methods("POST")
 
-	r.HandleFunc("/api/uploaded_data", UploadedData).Methods("GET")
+	r.HandleFunc("/api/shard_hashes", ShardHashes).Methods("GET")
 	r.HandleFunc("/api/get_blob", GetBlob).Methods("GET")
 
 	log.Print("Running Publisher API on localhost:", scontext.Config.Api.Port)

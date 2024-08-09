@@ -13,7 +13,7 @@ import (
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
-func UploadedData(w http.ResponseWriter, r *http.Request) {
+func ShardHashes(w http.ResponseWriter, r *http.Request) {
 	metadataUri := r.URL.Query().Get("metadata_uri")
 	indices := r.URL.Query().Get("indices")
 	indicesList := strings.Split(indices, ",")

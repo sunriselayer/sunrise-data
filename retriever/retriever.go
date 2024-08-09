@@ -51,7 +51,7 @@ func GetDataFromIpfsOrArweave(uri string) ([]byte, error) {
 	} else if strings.Contains(uri, "ar://") { //arweave
 		arweaveClient := goar.NewClient("https://arweave.net")
 		return arweaveClient.GetTransactionData(strings.Replace(uri, "ar://", "", 1))
-	} else {
-		return nil, errors.New("unsupported protocol")
 	}
+
+	return nil, errors.New("unsupported protocol")
 }
