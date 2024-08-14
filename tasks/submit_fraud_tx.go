@@ -4,46 +4,23 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/base64"
-	"math/rand/v2"
-	"time"
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog/log"
-	"github.com/sunriselayer/sunrise/x/da/types"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 	"github.com/sunriselayer/sunrise/x/da/zkp"
 
 	"github.com/sunriselayer/sunrise-data/context"
-	scontext "github.com/sunriselayer/sunrise-data/context"
 	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
-func getRandomIndices(n, threshold int64, seed1, seed2 uint64) []int64 {
-	if threshold > n {
-		threshold = n
-	}
-	arr := []int64{}
-	for i := int64(0); i < n; i++ {
-		arr = append(arr, i)
-	}
-
-	s3 := rand.NewPCG(seed1, seed2)
-	r3 := rand.New(s3)
-
-	r3.Shuffle(int(n), func(i, j int) {
-		arr[i], arr[j] = arr[j], arr[i]
-	})
-
-	// Return the first threshold elements from the shuffled array
-	return arr[:threshold]
-}
-
 func getShardProofBytes(shardHash []byte, shardDoubleHash []byte) ([]byte, bool) {
-	queryParamsResponse, err := scontext.QueryClient.Params(context.Ctx, &types.QueryParamsRequest{})
+	queryParamsResponse, err := context.QueryClient.Params(context.Ctx, &datypes.QueryParamsRequest{})
 	if err != nil {
 		return nil, false
 	}
@@ -97,7 +74,7 @@ func getShardProofBytes(shardHash []byte, shardDoubleHash []byte) ([]byte, bool)
 }
 
 func submitInvalidDataTx(metadataUri string) bool {
-	proofMsg := &types.MsgSubmitProof{
+	proofMsg := &datypes.MsgSubmitProof{
 		Sender:      context.Addr,
 		MetadataUri: metadataUri,
 		Indices:     []int64{},
@@ -116,7 +93,7 @@ func submitInvalidDataTx(metadataUri string) bool {
 }
 
 func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) bool {
-	proofMsg := &types.MsgSubmitProof{
+	proofMsg := &datypes.MsgSubmitProof{
 		Sender:      context.Addr,
 		MetadataUri: metadataUri,
 		Indices:     indices,
@@ -135,7 +112,7 @@ func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) boo
 }
 
 func SubmitFraudTx(metadataUri string) bool {
-	msg := &types.MsgChallengeForFraud{
+	msg := &datypes.MsgChallengeForFraud{
 		Sender:      context.Addr,
 		MetadataUri: metadataUri,
 	}
@@ -186,8 +163,21 @@ func SubmitFraudTx(metadataUri string) bool {
 		}
 	}
 
+	queryThresholdResponse, err := context.QueryClient.ZkpProofThreshold(context.Ctx, &datypes.QueryZkpProofThresholdRequest{ShardCount: uint64(len(metadata.ShardUris))})
+	if err != nil {
+		log.Print("Failed to query Threshold: ", err)
+		return false
+	}
+
+	threshold := queryThresholdResponse.Threshold
+
 	shardLength := int64(len(metadata.ShardUris))
-	indices := getRandomIndices(shardLength, shardLength/2, uint64(time.Now().Unix()), 1024)
+	addr, err := sdk.AccAddressFromBech32(context.Addr)
+	if err != nil {
+		log.Print("Failed to parse AccAddress: ", context.Addr, err)
+		return false
+	}
+	indices := datypes.ShardIndicesForValidator(sdk.ValAddress(addr), int64(threshold), shardLength)
 
 	proofs := [][]byte{}
 

@@ -55,7 +55,11 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shardSize, _, shards := erasurecoding.ErasureCode(blobBytes, req.ShardCountHalf)
+	shardSize, _, shards, err := erasurecoding.ErasureCode(blobBytes, req.ShardCountHalf)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	if queryParamResponse.Params.MaxShardSize < shardSize {
 		http.Error(w, "ShardSize is bigger than Max_ShardSize", http.StatusBadRequest)
 		return
