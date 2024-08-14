@@ -29,6 +29,8 @@ func GetContext(conf config.Config) {
 		cosmosclient.WithKeyringBackend(cosmosaccount.KeyringBackend(conf.Chain.KeyringBackend)),
 		cosmosclient.WithHome(conf.Chain.HomePath),
 		cosmosclient.WithFees(conf.Chain.Fees),
+		cosmosclient.WithGasAdjustment(1.5),
+		cosmosclient.WithGas(cosmosclient.GasAuto),
 	)
 	QueryClient = datypes.NewQueryClient(NodeClient.Context())
 

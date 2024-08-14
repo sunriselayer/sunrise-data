@@ -17,6 +17,7 @@ import (
 	"github.com/sunriselayer/sunrise/x/da/zkp"
 
 	"github.com/sunriselayer/sunrise-data/context"
+	scontext "github.com/sunriselayer/sunrise-data/context"
 	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
@@ -42,7 +43,12 @@ func getRandomIndices(n, threshold int64, seed1, seed2 uint64) []int64 {
 }
 
 func getShardProofBytes(shardHash []byte, shardDoubleHash []byte) ([]byte, bool) {
-	params := types.DefaultParams()
+	queryParamsResponse, err := scontext.QueryClient.Params(context.Ctx, &types.QueryParamsRequest{})
+	if err != nil {
+		return nil, false
+	}
+
+	params := queryParamsResponse.Params
 
 	// witness definition
 	assignment := zkp.ValidityProofCircuit{
