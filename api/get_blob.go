@@ -40,7 +40,8 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 		}
 		shards = append(shards, shardData)
 	}
-	blobBytes, err := erasurecoding.JoinShards(shards, int(metadata.DataShardCount), int(metadata.RecoveredDataSize))
+	DataShardCount := len(shardUris) - int(metadata.ParityShardCount)
+	blobBytes, err := erasurecoding.JoinShards(shards, DataShardCount, int(metadata.RecoveredDataSize))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

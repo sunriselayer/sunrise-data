@@ -118,7 +118,9 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 					validShards = append(validShards, shardData)
 				}
 
-				if len(validShards) < int(metadata.DataShardCount) {
+				DataShardCount := len(publishedData.ShardDoubleHashes) - int(metadata.ParityShardCount)
+
+				if len(validShards) < DataShardCount {
 					log.Print("Valid shard count less than DataShardCount: ", len(validShards))
 					SubmitFraudTx(metadataUri)
 					continue

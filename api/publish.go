@@ -105,7 +105,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	msg := &types.MsgPublishData{
 		Sender:            context.Addr,
 		MetadataUri:       metadataUri,
-		DataShardCount:    uint64(req.DataShardCount),
+		ParityShardCount:  uint64(req.ParityShardCount),
 		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
 	}
 	// Broadcast a transaction from account `alice` with the message

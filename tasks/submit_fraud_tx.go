@@ -184,7 +184,9 @@ func SubmitFraudTx(metadataUri string) bool {
 		validShardIndexes = append(validShardIndexes, index)
 	}
 
-	if len(validShards) < int(metadata.DataShardCount) {
+	DataShardCount := len(publishedData.ShardDoubleHashes) - int(metadata.ParityShardCount)
+
+	if len(validShards) < DataShardCount {
 		log.Print("Valid shard count less than DataShardCount: ", len(validShards))
 		return submitInvalidDataTx(metadataUri)
 	}
