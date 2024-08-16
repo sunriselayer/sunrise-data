@@ -17,9 +17,10 @@ type UploadedDataResponse struct {
 }
 
 type PublishRequest struct {
-	Blob           string `json:"blob"`
-	ShardCountHalf int    `json:"shard_count_half"`
-	Protocol       string `json:"protocol"`
+	Blob             string `json:"blob"`
+	DataShardCount   int    `json:"data_shard_count"`
+	ParityShardCount int    `json:"parity_shard_count"`
+	Protocol         string `json:"protocol"`
 }
 
 type PublishResponse struct {

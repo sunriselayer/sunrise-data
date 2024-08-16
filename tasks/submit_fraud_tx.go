@@ -111,7 +111,7 @@ func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) boo
 	return true
 }
 
-func SubmitFraudTx(metadataUri string) bool {
+func submitChallengeForFraud(metadataUri string) bool {
 	msg := &datypes.MsgChallengeForFraud{
 		Sender:      context.Addr,
 		MetadataUri: metadataUri,
@@ -122,13 +122,29 @@ func SubmitFraudTx(metadataUri string) bool {
 		return false
 	}
 	log.Print("ChallengeForFraud TxHash:", txResp.TxHash)
+	return true
+}
 
+func SubmitFraudTx(metadataUri string) bool {
 	publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
 	if err != nil {
 		log.Print("Failed to query metadata from on-chain: ", err)
 		return false
 	}
 	publishedData := publishedDataResponse.Data
+
+	if !context.Config.Api.SubmitChallenge {
+		return false
+	}
+
+	ok := submitChallengeForFraud(metadataUri)
+	if !ok {
+		return false
+	}
+
+	if !context.Config.Api.SubmitProof {
+		return false
+	}
 
 	// verify shard data
 	metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
@@ -148,52 +164,67 @@ func SubmitFraudTx(metadataUri string) bool {
 		return submitInvalidDataTx(metadataUri)
 	}
 
-	for index := 0; index < len(metadata.ShardUris); index++ {
+	validShards := [][]byte{}
+	validShardIndexes := []int{}
+
+	for index, doubleHash := range publishedData.ShardDoubleHashes {
 		shardUri := metadata.ShardUris[index]
 		shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 		if err != nil {
 			log.Print("Failed to get shard data: ", err)
-			return submitInvalidDataTx(metadataUri)
+			continue
 		}
-		doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
 
-		if doubleShardHash != base64.StdEncoding.EncodeToString(publishedData.ShardDoubleHashes[index]) {
+		doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
+		if doubleShardHash != base64.StdEncoding.EncodeToString(doubleHash) {
 			log.Print("Incorrect shard data: ", index)
-			return submitInvalidDataTx(metadataUri)
+			continue
 		}
+		validShards = append(validShards, shardData)
+		validShardIndexes = append(validShardIndexes, index)
 	}
 
-	queryThresholdResponse, err := context.QueryClient.ZkpProofThreshold(context.Ctx, &datypes.QueryZkpProofThresholdRequest{ShardCount: uint64(len(metadata.ShardUris))})
+	if len(validShards) < int(metadata.DataShardCount) {
+		log.Print("Valid shard count less than DataShardCount: ", len(validShards))
+		return submitInvalidDataTx(metadataUri)
+	}
+
+	shardLength := len(metadata.ShardUris)
+	queryThresholdResponse, err := context.QueryClient.ZkpProofThreshold(context.Ctx, &datypes.QueryZkpProofThresholdRequest{ShardCount: uint64(shardLength)})
 	if err != nil {
 		log.Print("Failed to query Threshold: ", err)
 		return false
 	}
 
 	threshold := queryThresholdResponse.Threshold
-
-	shardLength := int64(len(metadata.ShardUris))
 	addr, err := sdk.AccAddressFromBech32(context.Addr)
 	if err != nil {
 		log.Print("Failed to parse AccAddress: ", context.Addr, err)
 		return false
 	}
-	indices := datypes.ShardIndicesForValidator(sdk.ValAddress(addr), int64(threshold), shardLength)
 
+	requiredIndices := datypes.ShardIndicesForValidator(sdk.ValAddress(addr), int64(threshold), int64(shardLength))
 	proofs := [][]byte{}
+	indices := []int64{}
 
-	for i := range indices {
-		shardUri := metadata.ShardUris[indices[i]]
-		shardData, _ := retriever.GetDataFromIpfsOrArweave(shardUri)
-		shardHash := utils.HashMimc(shardData)
-		doubleShardHash := utils.HashMimc(shardHash)
+	for _, indice := range requiredIndices {
+		for i, validIndex := range validShardIndexes {
+			if indice != int64(validIndex) {
+				continue
+			}
 
-		proofBytes, ok := getShardProofBytes(shardHash, doubleShardHash)
-		if !ok {
-			log.Print("Failed to generate shard proof: ", metadataUri, "indice: ", indices[i])
-			return false
+			shardData := validShards[i]
+			shardHash := utils.HashMimc(shardData)
+			doubleShardHash := utils.HashMimc(shardHash)
+			proofBytes, ok := getShardProofBytes(shardHash, doubleShardHash)
+			if !ok {
+				log.Print("Failed to generate shard proof: ", metadataUri, "indice: ", indice)
+				return false
+			}
+
+			proofs = append(proofs, proofBytes)
+			indices = append(indices, indice)
 		}
-
-		proofs = append(proofs, proofBytes)
 	}
 
 	return submitValidDataTx(metadataUri, indices, proofs)

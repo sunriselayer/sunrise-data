@@ -1,6 +1,8 @@
 [api]
 port = 8000
 ipfs_api_url = ""
+submit_challenge = true
+submit_proof = true
 
 [chain]
 addr_prefix="sunrise"

@@ -6,8 +6,10 @@ import (
 
 type Config struct {
 	Api struct {
-		Port       int    `toml:"port"`
-		IpfsApiUrl string `toml:"ipfs_api_url"`
+		Port            int    `toml:"port"`
+		IpfsApiUrl      string `toml:"ipfs_api_url"`
+		SubmitChallenge bool   `toml:"submit_challenge"`
+		SubmitProof     bool   `toml:"submit_proof"`
 	}
 	Chain struct {
 		AddrPrefix          string `toml:"addr_prefix"`

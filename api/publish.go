@@ -50,12 +50,16 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if queryParamResponse.Params.MinShardCount > uint64(req.ShardCountHalf*2) {
-		http.Error(w, "ShardCount is less than Min_ShardCount", http.StatusBadRequest)
+	if queryParamResponse.Params.MinShardCount > uint64(req.DataShardCount+req.ParityShardCount) {
+		http.Error(w, "DataShardCount + ParityShardCount is less than Min_ShardCount", http.StatusBadRequest)
+		return
+	}
+	if queryParamResponse.Params.MaxShardCount < uint64(req.DataShardCount+req.ParityShardCount) {
+		http.Error(w, "DataShardCount + ParityShardCount is bigger than Max_ShardCount", http.StatusBadRequest)
 		return
 	}
 
-	shardSize, _, shards, err := erasurecoding.ErasureCode(blobBytes, req.ShardCountHalf)
+	shardSize, _, shards, err := erasurecoding.ErasureCode(blobBytes, req.DataShardCount, req.ParityShardCount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -101,6 +105,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	msg := &types.MsgPublishData{
 		Sender:            context.Addr,
 		MetadataUri:       metadataUri,
+		DataShardCount:    uint64(req.DataShardCount),
 		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
 	}
 	// Broadcast a transaction from account `alice` with the message

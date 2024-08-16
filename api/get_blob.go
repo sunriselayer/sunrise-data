@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
+
+	"github.com/sunriselayer/sunrise-data/retriever"
 )
 
 func GetBlob(w http.ResponseWriter, r *http.Request) {
@@ -35,11 +36,11 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 		shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			continue
 		}
 		shards = append(shards, shardData)
 	}
-	blobBytes, err := erasurecoding.JoinShards(shards, int(metadata.RecoveredDataSize))
+	blobBytes, err := erasurecoding.JoinShards(shards, int(metadata.DataShardCount), int(metadata.RecoveredDataSize))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

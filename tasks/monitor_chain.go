@@ -100,21 +100,28 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 					continue
 				}
 
-				for index := 0; index < len(publishedData.ShardDoubleHashes); index++ {
+				validShards := [][]byte{}
+
+				for index, doubleHash := range publishedData.ShardDoubleHashes {
 					shardUri := metadata.ShardUris[index]
 					shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 					if err != nil {
 						log.Print("Failed to get shard data: ", err)
-						SubmitFraudTx(metadataUri)
-						break
+						continue
 					}
-					doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
 
-					if doubleShardHash != base64.StdEncoding.EncodeToString(publishedData.ShardDoubleHashes[index]) {
+					doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
+					if doubleShardHash != base64.StdEncoding.EncodeToString(doubleHash) {
 						log.Print("Incorrect shard data: ", index)
-						SubmitFraudTx(metadataUri)
-						break
+						continue
 					}
+					validShards = append(validShards, shardData)
+				}
+
+				if len(validShards) < int(metadata.DataShardCount) {
+					log.Print("Valid shard count less than DataShardCount: ", len(validShards))
+					SubmitFraudTx(metadataUri)
+					continue
 				}
 			}
 		}
