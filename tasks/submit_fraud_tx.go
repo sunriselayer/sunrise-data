@@ -134,12 +134,10 @@ func SubmitFraudTx(metadataUri string) bool {
 	publishedData := publishedDataResponse.Data
 
 	if !context.Config.Api.SubmitChallenge {
-		return false
-	}
-
-	ok := submitChallengeForFraud(metadataUri)
-	if !ok {
-		return false
+		ok := submitChallengeForFraud(metadataUri)
+		if !ok {
+			return false
+		}
 	}
 
 	if !context.Config.Api.SubmitProof {
