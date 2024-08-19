@@ -84,10 +84,10 @@ func submitInvalidDataTx(metadataUri string) bool {
 
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
 	if err != nil {
-		log.Print("Failed to broadcast MsgSubmitProof transaction: ", metadataUri, err)
+		log.Error().Msgf("Failed to broadcast MsgSubmitProof transaction: %s %s", metadataUri, err)
 		return false
 	}
-	log.Print("MsgSubmitProof TxHash:", txResp.TxHash)
+	log.Info().Msgf("MsgSubmitProof TxHash: %s", txResp.TxHash)
 
 	return true
 }
@@ -103,10 +103,10 @@ func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) boo
 
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
 	if err != nil {
-		log.Print("Failed to broadcast MsgSubmitProof transaction: ", metadataUri, err)
+		log.Error().Msgf("Failed to broadcast MsgSubmitProof transaction: %s %s", metadataUri, err)
 		return false
 	}
-	log.Print("MsgSubmitProof TxHash:", txResp.TxHash)
+	log.Info().Msgf("MsgSubmitProof TxHash: %s", txResp.TxHash)
 
 	return true
 }
@@ -118,22 +118,22 @@ func submitChallengeForFraud(metadataUri string) bool {
 	}
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
 	if err != nil {
-		log.Print("Failed to broadcast MsgChallengeForFraud transaction: ", metadataUri, err)
+		log.Error().Msgf("Failed to broadcast MsgChallengeForFraud transaction: %s %s", metadataUri, err)
 		return false
 	}
-	log.Print("ChallengeForFraud TxHash:", txResp.TxHash)
+	log.Info().Msgf("ChallengeForFraud TxHash: %s", txResp.TxHash)
 	return true
 }
 
 func SubmitFraudTx(metadataUri string) bool {
 	publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
 	if err != nil {
-		log.Print("Failed to query metadata from on-chain: ", err)
+		log.Error().Msgf("Failed to query metadata from on-chain: %s", err)
 		return false
 	}
 	publishedData := publishedDataResponse.Data
 
-	if !context.Config.Api.SubmitChallenge {
+	if context.Config.Api.SubmitChallenge {
 		ok := submitChallengeForFraud(metadataUri)
 		if !ok {
 			return false
@@ -147,18 +147,18 @@ func SubmitFraudTx(metadataUri string) bool {
 	// verify shard data
 	metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
 	if err != nil {
-		log.Print("Failed to get metadata: ", err)
+		log.Error().Msgf("Failed to get metadata: %s", err)
 		return submitInvalidDataTx(metadataUri)
 	}
 
 	metadata := datypes.Metadata{}
 	if err := metadata.Unmarshal(metadataBytes); err != nil {
-		log.Print("Failed to decode metadata: ", err)
+		log.Error().Msgf("Failed to decode metadata: %s", err)
 		return submitInvalidDataTx(metadataUri)
 	}
 
 	if len(publishedData.ShardDoubleHashes) != len(metadata.ShardUris) {
-		log.Print("Incorrect shard data count: ", len(publishedData.ShardDoubleHashes), len(metadata.ShardUris))
+		log.Error().Msgf("Incorrect shard data count: %d %d", len(publishedData.ShardDoubleHashes), len(metadata.ShardUris))
 		return submitInvalidDataTx(metadataUri)
 	}
 
@@ -169,13 +169,13 @@ func SubmitFraudTx(metadataUri string) bool {
 		shardUri := metadata.ShardUris[index]
 		shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 		if err != nil {
-			log.Print("Failed to get shard data: ", err)
+			log.Error().Msgf("Failed to get shard data: %s", err)
 			continue
 		}
 
 		doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
 		if doubleShardHash != base64.StdEncoding.EncodeToString(doubleHash) {
-			log.Print("Incorrect shard data: ", index)
+			log.Error().Msgf("Incorrect shard data: %d", index)
 			continue
 		}
 		validShards = append(validShards, shardData)
@@ -185,21 +185,21 @@ func SubmitFraudTx(metadataUri string) bool {
 	DataShardCount := len(publishedData.ShardDoubleHashes) - int(metadata.ParityShardCount)
 
 	if len(validShards) < DataShardCount {
-		log.Print("Valid shard count less than DataShardCount: ", len(validShards))
+		log.Error().Msgf("Valid shard count less than DataShardCount: %d", len(validShards))
 		return submitInvalidDataTx(metadataUri)
 	}
 
 	shardLength := len(metadata.ShardUris)
 	queryThresholdResponse, err := context.QueryClient.ZkpProofThreshold(context.Ctx, &datypes.QueryZkpProofThresholdRequest{ShardCount: uint64(shardLength)})
 	if err != nil {
-		log.Print("Failed to query Threshold: ", err)
+		log.Error().Msgf("Failed to query Threshold: %s", err)
 		return false
 	}
 
 	threshold := queryThresholdResponse.Threshold
 	addr, err := sdk.AccAddressFromBech32(context.Addr)
 	if err != nil {
-		log.Print("Failed to parse AccAddress: ", context.Addr, err)
+		log.Error().Msgf("Failed to parse AccAddress: %s %s", context.Addr, err)
 		return false
 	}
 
@@ -218,7 +218,7 @@ func SubmitFraudTx(metadataUri string) bool {
 			doubleShardHash := utils.HashMimc(shardHash)
 			proofBytes, ok := getShardProofBytes(shardHash, doubleShardHash)
 			if !ok {
-				log.Print("Failed to generate shard proof: ", metadataUri, "indice: ", indice)
+				log.Error().Msgf("Failed to generate shard proof: %s, indice: %d", metadataUri, indice)
 				return false
 			}
 

@@ -24,7 +24,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
-		log.Print("Failed to decode Blob", err)
+		log.Error().Msgf("Failed to decode Blob %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -115,7 +115,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Print("TxHash:", txResp.TxHash)
+	log.Info().Msgf("TxHash: %s", txResp.TxHash)
 	// Print response from broadcasting a transaction
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(PublishResponse{

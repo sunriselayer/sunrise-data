@@ -45,14 +45,14 @@ func MonitorChain(txConfig client.TxConfig) {
 func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 	result, err := SearchTxHashHandle(context.Config.Chain.CometbftRPC, 0, 100, syncBlock)
 	if err != nil {
-		log.Print("Transaction search failed: ", err)
+		log.Error().Msgf("Transaction search failed: %s", err)
 		return
 	}
 
 	for _, tx := range result.Txs {
 		decoded, err := txConfig.TxDecoder()(tx.Tx)
 		if err != nil {
-			log.Print("Transaction decode failed: ", err)
+			log.Error().Msgf("Transaction decode failed: %s", err)
 			continue
 		}
 
@@ -69,33 +69,33 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				// check metadata uri status
 				publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
 				if err != nil {
-					log.Print("Failed to query metadata from on-chain: ", err)
+					log.Error().Msgf("Failed to query metadata from on-chain: %s", err)
 					continue
 				}
 
 				publishedData := publishedDataResponse.Data
 				if publishedData.Status != "vote_extension" {
-					log.Print("Not passed the vote extension yet")
+					log.Error().Msg("Not passed the vote extension yet")
 					continue
 				}
 
 				// verify shard data
 				metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
 				if err != nil {
-					log.Print("Failed to get metadata: ", err)
+					log.Error().Msgf("Failed to get metadata: %s", err)
 					SubmitFraudTx(metadataUri)
 					continue
 				}
 
 				metadata := datypes.Metadata{}
 				if err := metadata.Unmarshal(metadataBytes); err != nil {
-					log.Print("Failed to decode metadata: ", err)
+					log.Error().Msgf("Failed to decode metadata: %s", err)
 					SubmitFraudTx(metadataUri)
 					continue
 				}
 
 				if len(publishedData.ShardDoubleHashes) != len(metadata.ShardUris) {
-					log.Print("Incorrect shard data count: ", err)
+					log.Error().Msgf("Incorrect shard data count: %s", err)
 					SubmitFraudTx(metadataUri)
 					continue
 				}
@@ -106,13 +106,13 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 					shardUri := metadata.ShardUris[index]
 					shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 					if err != nil {
-						log.Print("Failed to get shard data: ", err)
+						log.Error().Msgf("Failed to get shard data: %s", err)
 						continue
 					}
 
 					doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
 					if doubleShardHash != base64.StdEncoding.EncodeToString(doubleHash) {
-						log.Print("Incorrect shard data: ", index)
+						log.Error().Msgf("Incorrect shard data: %d", index)
 						continue
 					}
 					validShards = append(validShards, shardData)
@@ -121,7 +121,7 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				DataShardCount := len(publishedData.ShardDoubleHashes) - int(metadata.ParityShardCount)
 
 				if len(validShards) < DataShardCount {
-					log.Print("Valid shard count less than DataShardCount: ", len(validShards))
+					log.Error().Msgf("Valid shard count less than DataShardCount: %d", len(validShards))
 					SubmitFraudTx(metadataUri)
 					continue
 				}
@@ -145,7 +145,7 @@ func SearchTxHashHandle(rpcAddr string, page int, limit int, txHeight int64) (*t
 
 	resp, err := http.Get(endpoint)
 	if err != nil {
-		log.Print("Unable to connect to ", endpoint)
+		log.Error().Msgf("Unable to connect to %s", endpoint)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -155,18 +155,18 @@ func SearchTxHashHandle(rpcAddr string, page int, limit int, txHeight int64) (*t
 	response := new(tmJsonRPCTypes.RPCResponse)
 
 	if err := json.Unmarshal(respBody, response); err != nil {
-		log.Print("Unable to decode response: ", err)
+		log.Error().Msgf("Unable to decode response: %s", err)
 		return nil, err
 	}
 
 	if response.Error != nil {
-		log.Print("Error response:", response.Error.Message)
+		log.Error().Msgf("Error response: %s", response.Error.Message)
 		return nil, errors.New(response.Error.Message)
 	}
 
 	result := new(tmTypes.ResultTxSearch)
 	if err := tmjson.Unmarshal(response.Result, result); err != nil {
-		log.Print("Failed to unmarshal result:", err)
+		log.Error().Msgf("Failed to unmarshal result: %s", err)
 		return nil, fmt.Errorf("error unmarshalling result: %w", err)
 	}
 

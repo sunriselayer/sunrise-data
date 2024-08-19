@@ -42,7 +42,7 @@ func Handle() {
 	r.HandleFunc("/api/shard_hashes", ShardHashes).Methods("GET")
 	r.HandleFunc("/api/get_blob", GetBlob).Methods("GET")
 
-	log.Print("Running Publisher API on localhost:", scontext.Config.Api.Port)
+	log.Info().Msgf("Running Publisher API on localhost: %d", scontext.Config.Api.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", scontext.Config.Api.Port), r)
 
 }
