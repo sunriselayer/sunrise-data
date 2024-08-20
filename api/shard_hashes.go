@@ -3,12 +3,12 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/retriever"
@@ -16,7 +16,7 @@ import (
 )
 
 func ShardHashes(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ShardHashes-1", time.Now())
+	log.Info().Msgf("ShardHashes-1 %d", time.Now())
 	metadataUri := r.URL.Query().Get("metadata_uri")
 	indices := r.URL.Query().Get("indices")
 	indicesList := strings.Split(indices, ",")
@@ -24,13 +24,13 @@ func ShardHashes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid query parameter", http.StatusBadRequest)
 		return
 	}
-	fmt.Println("ShardHashes-2", time.Now())
+	log.Info().Msgf("ShardHashes-2 %d", time.Now())
 	metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("ShardHashes-3", time.Now())
+	log.Info().Msgf("ShardHashes-3 %d", time.Now())
 
 	metadata := types.Metadata{}
 	if err := metadata.Unmarshal(metadataBytes); err != nil {
@@ -45,14 +45,14 @@ func ShardHashes(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if iIndex < len(metadata.ShardUris) {
-			fmt.Println("ShardHashes-4", time.Now())
+			log.Info().Msgf("ShardHashes-4 %d", time.Now())
 			shardUri := metadata.ShardUris[iIndex]
 			shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			fmt.Println("ShardHashes-5", time.Now())
+			log.Info().Msgf("ShardHashes-5 %d", time.Now())
 			shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(shardData)))
 		}
 	}
@@ -63,7 +63,7 @@ func ShardHashes(w http.ResponseWriter, r *http.Request) {
 		ShardHashes: shardHashes,
 	}
 
-	fmt.Println("ShardHashes-6", time.Now())
+	log.Info().Msgf("ShardHashes-6 %d", time.Now())
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 
