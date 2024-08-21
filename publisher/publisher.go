@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"sort"
 
 	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
@@ -14,24 +15,47 @@ import (
 	scontext "github.com/sunriselayer/sunrise-data/context"
 )
 
+type ShardUriCh struct {
+	shardUri string
+	index    int
+}
+
 // upload shards to ipfs
 func GetShardUris(inputData [][]byte, protocol string) ([]string, error) {
 	var shardUris []string
-	for _, data := range inputData {
-		if protocol == consts.IPFS_PROTOCOL {
-			shardUri, err := UploadToIpfs(data)
-			if err != nil {
-				return nil, err
+	shardUriCh := make(chan ShardUriCh, len(inputData))
+
+	for i, data := range inputData {
+		go func() {
+			if protocol == consts.IPFS_PROTOCOL {
+				shardUri, err := UploadToIpfs(data)
+				if err != nil {
+					return
+				}
+				shardUriCh <- ShardUriCh{shardUri, i}
+			} else {
+				shardUri, err := UploadToArweave(data)
+				if err != nil {
+					return
+				}
+				shardUriCh <- ShardUriCh{shardUri, i}
 			}
-			shardUris = append(shardUris, shardUri)
-		} else {
-			shardUri, err := UploadToArweave(data)
-			if err != nil {
-				return nil, err
-			}
-			shardUris = append(shardUris, shardUri)
-		}
+		}()
 	}
+
+	var shardUriChs []ShardUriCh
+	for range inputData {
+		chValue := <-shardUriCh
+		shardUriChs = append(shardUriChs, chValue)
+	}
+	sort.Slice(shardUriChs, func(i, j int) bool {
+		return shardUriChs[i].index < shardUriChs[j].index
+	})
+
+	for _, shardUriCh := range shardUriChs {
+		shardUris = append(shardUris, shardUriCh.shardUri)
+	}
+
 	return shardUris, nil
 }
 

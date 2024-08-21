@@ -4,15 +4,20 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
+
+type ShardDataReponse struct {
+	shard []byte
+	index int
+}
 
 func ShardHashes(w http.ResponseWriter, r *http.Request) {
 	metadataUri := r.URL.Query().Get("metadata_uri")
@@ -33,15 +38,11 @@ func ShardHashes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	shardHashes := []string{}
 
-	var wg sync.WaitGroup
-	shardDataResponseCh := make(chan ([]byte), len(indicesList))
-	for _, index := range indicesList {
-		wg.Add(1)
-		go func(index string) {
-			defer wg.Done()
-			iIndex, err := strconv.Atoi(index)
+	shardDataResponseCh := make(chan ShardDataReponse, len(indicesList))
+	for i, indiceIndex := range indicesList {
+		go func() {
+			iIndex, err := strconv.Atoi(indiceIndex)
 			if err != nil {
 				return
 			}
@@ -52,33 +53,24 @@ func ShardHashes(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return
 				}
-				shardDataResponseCh <- shardData
+				shardDataResponseCh <- ShardDataReponse{shardData, i}
 			}
-		}(index)
+		}()
 	}
 
-	wg.Wait()
-	close(shardDataResponseCh)
-
-	for chValue := range shardDataResponseCh {
-		shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(chValue)))
+	var shardDataResponses []ShardDataReponse
+	for range indicesList {
+		chValue := <-shardDataResponseCh
+		shardDataResponses = append(shardDataResponses, chValue)
 	}
+	sort.Slice(shardDataResponses, func(i, j int) bool {
+		return shardDataResponses[i].index < shardDataResponses[j].index
+	})
 
-	// for _, index := range indicesList {
-	// 	iIndex, err := strconv.Atoi(index)
-	// 	if err != nil {
-	// 		continue
-	// 	}
-	// 	if iIndex < len(metadata.ShardUris) {
-	// 		shardUri := metadata.ShardUris[iIndex]
-	// 		shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
-	// 		if err != nil {
-	// 			http.Error(w, err.Error(), http.StatusBadRequest)
-	// 			return
-	// 		}
-	// 		shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(shardData)))
-	// 	}
-	// }
+	shardHashes := []string{}
+	for _, shardData := range shardDataResponses {
+		shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(shardData.shard)))
+	}
 
 	res := UploadedDataResponse{
 		ShardSize:   metadata.ShardSize,
