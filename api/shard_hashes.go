@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,11 @@ import (
 	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
+
+type ShardDataReponse struct {
+	shard []byte
+	index int
+}
 
 func ShardHashes(w http.ResponseWriter, r *http.Request) {
 	metadataUri := r.URL.Query().Get("metadata_uri")
@@ -32,22 +38,38 @@ func ShardHashes(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	shardHashes := []string{}
 
-	for _, index := range indicesList {
-		iIndex, err := strconv.Atoi(index)
-		if err != nil {
-			continue
-		}
-		if iIndex < len(metadata.ShardUris) {
-			shardUri := metadata.ShardUris[iIndex]
-			shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
+	shardDataResponseCh := make(chan ShardDataReponse, len(indicesList))
+	for i, indiceIndex := range indicesList {
+		go func() {
+			iIndex, err := strconv.Atoi(indiceIndex)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(shardData)))
-		}
+			if iIndex < len(metadata.ShardUris) {
+				shardUri := metadata.ShardUris[iIndex]
+				shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				shardDataResponseCh <- ShardDataReponse{shardData, i}
+			}
+		}()
+	}
+
+	var shardDataResponses []ShardDataReponse
+	for range indicesList {
+		chValue := <-shardDataResponseCh
+		shardDataResponses = append(shardDataResponses, chValue)
+	}
+	sort.Slice(shardDataResponses, func(i, j int) bool {
+		return shardDataResponses[i].index < shardDataResponses[j].index
+	})
+
+	shardHashes := []string{}
+	for _, shardData := range shardDataResponses {
+		shardHashes = append(shardHashes, base64.StdEncoding.EncodeToString(utils.HashMimc(shardData.shard)))
 	}
 
 	res := UploadedDataResponse{

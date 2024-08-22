@@ -66,6 +66,8 @@ $ ls
 - Prepare config.toml
   Copy config.default.toml to config.toml and replace your configurations.
 
+  Note: To connect to a local IPFS daemon, leave the `ipfs_api_url` field empty. For a remote IPFS daemon, specify the HTTP URL along with the rpc port number, e.g. `http://1.2.3.4:5001`.
+
 - Run daemon
 ```sh
 $ make dev
