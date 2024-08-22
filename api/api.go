@@ -38,6 +38,7 @@ func Handle() {
 		w.Write([]byte("Welcome to sunrise-data API"))
 	}).Methods("GET")
 	r.HandleFunc("/api/publish", Publish).Methods("POST")
+	r.HandleFunc("/api/publish_file", PublishFile).Methods("POST")
 
 	r.HandleFunc("/api/shard_hashes", ShardHashes).Methods("GET")
 	r.HandleFunc("/api/get_blob", GetBlob).Methods("GET")
