@@ -10,7 +10,6 @@ import (
 	"github.com/everFinance/goar/types"
 	"github.com/ipfs/boxo/files"
 	"github.com/ipfs/kubo/client/rpc"
-	"github.com/rs/zerolog/log"
 
 	"github.com/sunriselayer/sunrise-data/consts"
 	scontext "github.com/sunriselayer/sunrise-data/context"
@@ -84,8 +83,6 @@ func UploadToIpfs(inputData []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	reason, isPinned, err := node.Pin().IsPinned(ctx, cidFile)
-	log.Info().Msgf("pinned status reason: %s, isPinned: %t, err: %v", reason, isPinned, err)
 
 	return "ipfs://" + cidFile.RootCid().String(), nil
 }
