@@ -50,6 +50,18 @@ $ ipfs init --profile=lowpower
 $ ipfs daemon
 ```
 
+### 5. Get IPFS node id
+
+```bash
+$ ipfs id
+```
+
+### 6. Add a remote IPFS node to the peer list
+
+```bash
+$ ipfs bootstrap add /ip4/13.114.102.20/tcp/4001/p2p/12D3KooWSBJ1warTMHy7bdaViev6udyWU8XBnz9QCYS8TSX9qadt
+```
+
 You can visit http://localhost:8080/ipfs to check runing IPFS RPC.
 
 ## Store project
