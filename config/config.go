@@ -8,6 +8,7 @@ type Config struct {
 	Api struct {
 		Port            int    `toml:"port"`
 		IpfsApiUrl      string `toml:"ipfs_api_url"`
+		IpfsAddrInfo    string `toml:"ipfs_addrinfo"`
 		SubmitChallenge bool   `toml:"submit_challenge"`
 		SubmitProof     bool   `toml:"submit_proof"`
 	}

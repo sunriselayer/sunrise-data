@@ -14,10 +14,12 @@ import (
 	tmTypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmJsonRPCTypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/publisher"
 	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
@@ -77,6 +79,11 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				if publishedData.Status != "vote_extension" {
 					log.Error().Msg("Not passed the vote extension yet")
 					continue
+				}
+
+				peerAddrInfo, err := peer.AddrInfoFromString(publishedData.DataSourceInfo)
+				if err == nil {
+					publisher.ConnectSwarm(*peerAddrInfo)
 				}
 
 				// verify shard data

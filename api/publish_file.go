@@ -121,6 +121,7 @@ func PublishFile(w http.ResponseWriter, r *http.Request) {
 		MetadataUri:       metadataUri,
 		ParityShardCount:  uint64(parityShardCount),
 		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
+		DataSourceInfo:    context.Config.Api.IpfsAddrInfo,
 	}
 	// Broadcast a transaction from account `alice` with the message
 	// to create a post store response in txResp

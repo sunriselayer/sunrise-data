@@ -10,11 +10,13 @@ import (
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 	"github.com/sunriselayer/sunrise/x/da/zkp"
 
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/publisher"
 	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
@@ -132,6 +134,11 @@ func SubmitFraudTx(metadataUri string) bool {
 		return false
 	}
 	publishedData := publishedDataResponse.Data
+
+	peerAddrInfo, err := peer.AddrInfoFromString(publishedData.DataSourceInfo)
+	if err == nil {
+		publisher.ConnectSwarm(*peerAddrInfo)
+	}
 
 	if context.Config.Api.SubmitChallenge {
 		ok := submitChallengeForFraud(metadataUri)

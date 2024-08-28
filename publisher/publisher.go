@@ -10,6 +10,7 @@ import (
 	"github.com/everFinance/goar/types"
 	"github.com/ipfs/boxo/files"
 	"github.com/ipfs/kubo/client/rpc"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/sunriselayer/sunrise-data/consts"
 	scontext "github.com/sunriselayer/sunrise-data/context"
@@ -57,6 +58,30 @@ func GetShardUris(inputData [][]byte, protocol string) ([]string, error) {
 	}
 
 	return shardUris, nil
+}
+
+func ConnectSwarm(addrInfo peer.AddrInfo) error {
+	var err error
+	var node *rpc.HttpApi
+	if scontext.Config.Api.IpfsApiUrl != "" {
+		node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, &http.Client{
+			Transport: &http.Transport{
+				Proxy:             http.ProxyFromEnvironment,
+				DisableKeepAlives: true,
+			},
+		})
+	} else {
+		node, err = rpc.NewLocalApi()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	err = node.Swarm().Connect(ctx, addrInfo)
+
+	return err
 }
 
 func UploadToIpfs(inputData []byte) (string, error) {
