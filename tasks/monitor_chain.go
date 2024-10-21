@@ -19,8 +19,8 @@ import (
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/protocols"
 	"github.com/sunriselayer/sunrise-data/publisher"
-	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
@@ -87,7 +87,14 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				}
 
 				// verify shard data
-				metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
+				protocol, err := protocols.GetRetrieveProtocol(metadataUri)
+				if err != nil {
+					log.Error().Msgf("Failed to get protocol: %s", err)
+					SubmitFraudTx(metadataUri)
+					continue
+				}
+
+				metadataBytes, err := protocol.Retrieve(metadataUri)
 				if err != nil {
 					log.Error().Msgf("Failed to get metadata: %s", err)
 					SubmitFraudTx(metadataUri)
@@ -111,7 +118,7 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 
 				for index, doubleHash := range publishedData.ShardDoubleHashes {
 					shardUri := metadata.ShardUris[index]
-					shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
+					shardData, err := protocol.Retrieve(shardUri)
 					if err != nil {
 						log.Error().Msgf("Failed to get shard data: %s", err)
 						continue

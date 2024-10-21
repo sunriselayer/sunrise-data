@@ -16,8 +16,8 @@ import (
 	"github.com/sunriselayer/sunrise/x/da/zkp"
 
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/protocols"
 	"github.com/sunriselayer/sunrise-data/publisher"
-	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
@@ -151,8 +151,14 @@ func SubmitFraudTx(metadataUri string) bool {
 		return false
 	}
 
+	protocol, err := protocols.GetRetrieveProtocol(metadataUri)
+	if err != nil {
+		log.Error().Msgf("Failed to get protocol: %s", err)
+		return submitInvalidDataTx(metadataUri)
+	}
+
 	// verify shard data
-	metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
+	metadataBytes, err := protocol.Retrieve(metadataUri)
 	if err != nil {
 		log.Error().Msgf("Failed to get metadata: %s", err)
 		return submitInvalidDataTx(metadataUri)
@@ -174,7 +180,7 @@ func SubmitFraudTx(metadataUri string) bool {
 
 	for index, doubleHash := range publishedData.ShardDoubleHashes {
 		shardUri := metadata.ShardUris[index]
-		shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
+		shardData, err := protocol.Retrieve(shardUri)
 		if err != nil {
 			log.Error().Msgf("Failed to get shard data: %s", err)
 			continue

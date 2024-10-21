@@ -10,9 +10,8 @@ import (
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
 
-	"github.com/sunriselayer/sunrise-data/consts"
 	"github.com/sunriselayer/sunrise-data/context"
-	"github.com/sunriselayer/sunrise-data/publisher"
+	"github.com/sunriselayer/sunrise-data/protocols"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
@@ -21,8 +20,10 @@ func PublishFile(w http.ResponseWriter, r *http.Request) {
 
 	fileName := r.FormValue("file_name")
 	protocol := r.FormValue("protocol")
-	if protocol != consts.IPFS_PROTOCOL && protocol != consts.ARWEAVE_PROTOCOL {
-		http.Error(w, "Invalid Protocol", http.StatusBadRequest)
+
+	publishProtocol, err := protocols.GetPublishProtocol(protocol)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -82,7 +83,7 @@ func PublishFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ShardSize is bigger than Max_ShardSize", http.StatusBadRequest)
 		return
 	}
-	shardUris, err := publisher.GetShardUris(shards, protocol)
+	shardUris, err := publishProtocol.PublishShards(shards)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -99,20 +100,11 @@ func PublishFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//upload ipfs
 	metadataUri := ""
-	if protocol == consts.IPFS_PROTOCOL {
-		metadataUri, err = publisher.UploadToIpfs(metadataBytes)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	} else {
-		metadataUri, err = publisher.UploadToArweave(metadataBytes)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+	metadataUri, err = publishProtocol.PublishMetadata(metadataBytes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// Define a message to create a post
