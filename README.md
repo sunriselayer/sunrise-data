@@ -50,6 +50,18 @@ $ ipfs init --profile=lowpower
 $ ipfs daemon
 ```
 
+### 5. Get IPFS node id
+
+```bash
+$ ipfs id
+```
+
+### 6. Add a remote IPFS node to the peer list
+
+```bash
+$ ipfs bootstrap add /ip4/13.114.102.20/tcp/4001/p2p/12D3KooWSBJ1warTMHy7bdaViev6udyWU8XBnz9QCYS8TSX9qadt
+```
+
 You can visit http://localhost:8080/ipfs to check runing IPFS RPC.
 
 ## Store project
@@ -65,6 +77,8 @@ $ ls
 
 - Prepare config.toml
   Copy config.default.toml to config.toml and replace your configurations.
+
+  Note: To connect to a local IPFS daemon, leave the `ipfs_api_url` field empty. For a remote IPFS daemon, specify the HTTP URL along with the rpc port number, e.g. `http://1.2.3.4:5001`.
 
 - Run daemon
 ```sh
@@ -100,7 +114,7 @@ Response JSON:
 }
 ```
 
-### 2. GET http://localhost:8000/api/shard_hashes?metadata_uri=[metadata_uri]&indices=1,2,3
+### 2. GET http://localhost:8000/api/shard-hashes?metadata_uri=[metadata_uri]&indices=1,2,3
 
 Response:
 
@@ -121,7 +135,7 @@ Response:
 }
 ```
 
-### 3. GET http://localhost:8000/api/get_blob?metadata_uri
+### 3. GET http://localhost:8000/api/get-blob?metadata_uri
 
 Response:
 
@@ -157,7 +171,7 @@ Response
 ### 2. Shard Hashes API
 
 ```protobuf
-GET http://localhost:8000/api/shard_hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
+GET http://localhost:8000/api/shard-hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
 
 {
     "shard_size":7,
@@ -180,7 +194,7 @@ GET http://localhost:8000/api/shard_hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn4
 ### 3. Get blob data from metadata_uri
 
 ```protobuf
-GET http://localhost:8000/api/get_blob?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
+GET http://localhost:8000/api/get-blob?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
 
 {
     "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA"

@@ -35,12 +35,12 @@
 			"response": []
 		},
 		{
-			"name": "http://localhost:8000/api/shard_hashes",
+			"name": "http://localhost:8000/api/shard-hashes",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/api/shard_hashes?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
+					"raw": "http://localhost:8000/api/shard-hashes?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -61,12 +61,12 @@
 			"response": []
 		},
 		{
-			"name": "http://localhost:8000/api/get_blob",
+			"name": "http://localhost:8000/api/get-blob",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/api/get_blob?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
+					"raw": "http://localhost:8000/api/get-blob?metadata_uri=ipfs://QmefhbDzzULdcTMDPnj72CL3cZj3atDCqvoR67mp6rwvzM",
 					"protocol": "http",
 					"host": [
 						"localhost"

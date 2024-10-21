@@ -18,7 +18,7 @@ func MakeCometbftRPCRequest(rpcAddr string, url string, query string, res interf
 
 	resp, err := http.Get(endpoint)
 	if err != nil {
-		log.Print("Unable to connect to ", endpoint)
+		log.Error().Msgf("Unable to connect to %s", endpoint)
 		return false, err, http.StatusInternalServerError
 	}
 	defer resp.Body.Close()
@@ -26,18 +26,18 @@ func MakeCometbftRPCRequest(rpcAddr string, url string, query string, res interf
 	response := new(types.RPCResponse)
 	err = json.NewDecoder(resp.Body).Decode(response)
 	if err != nil {
-		log.Print("Unable to decode response: : ", err)
+		log.Error().Msgf("Unable to decode response: %s", err)
 		return false, err, http.StatusInternalServerError
 	}
 
 	byteData, err := json.Marshal(response.Result)
 	if err != nil {
-		log.Print("Invalid response format", err)
+		log.Error().Msgf("Invalid response format %s", err)
 	}
 
 	err = json.Unmarshal(byteData, res)
 	if err != nil {
-		log.Print("Invalid response format", err)
+		log.Error().Msgf("Invalid response format %s", err)
 	}
 
 	return true, response.Error, resp.StatusCode
@@ -53,7 +53,7 @@ func GetLatestBlockHeight() int {
 
 	blockHeight, err := strconv.Atoi(result.SyncInfo.LatestBlockHeight)
 	if err != nil {
-		log.Print("Invalid response format", err)
+		log.Error().Msgf("Invalid response format %s", err)
 	}
 
 	return blockHeight

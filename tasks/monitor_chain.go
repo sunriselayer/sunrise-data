@@ -14,11 +14,13 @@ import (
 	tmTypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmJsonRPCTypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/rs/zerolog/log"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/context"
-	"github.com/sunriselayer/sunrise-data/retriever"
+	"github.com/sunriselayer/sunrise-data/protocols"
+	"github.com/sunriselayer/sunrise-data/publisher"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
@@ -45,14 +47,14 @@ func MonitorChain(txConfig client.TxConfig) {
 func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 	result, err := SearchTxHashHandle(context.Config.Chain.CometbftRPC, 0, 100, syncBlock)
 	if err != nil {
-		log.Print("Transaction search failed: ", err)
+		log.Error().Msgf("Transaction search failed: %s", err)
 		return
 	}
 
 	for _, tx := range result.Txs {
 		decoded, err := txConfig.TxDecoder()(tx.Tx)
 		if err != nil {
-			log.Print("Transaction decode failed: ", err)
+			log.Error().Msgf("Transaction decode failed: %s", err)
 			continue
 		}
 
@@ -69,52 +71,73 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				// check metadata uri status
 				publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
 				if err != nil {
-					log.Print("Failed to query metadata from on-chain: ", err)
+					log.Error().Msgf("Failed to query metadata from on-chain: %s", err)
 					continue
 				}
 
 				publishedData := publishedDataResponse.Data
 				if publishedData.Status != "vote_extension" {
-					log.Print("Not passed the vote extension yet")
+					log.Error().Msg("Not passed the vote extension yet")
 					continue
 				}
 
+				peerAddrInfo, err := peer.AddrInfoFromString(publishedData.DataSourceInfo)
+				if err == nil {
+					publisher.ConnectSwarm(*peerAddrInfo)
+				}
+
 				// verify shard data
-				metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
+				protocol, err := protocols.GetRetrieveProtocol(metadataUri)
 				if err != nil {
-					log.Print("Failed to get metadata: ", err)
+					log.Error().Msgf("Failed to get protocol: %s", err)
+					SubmitFraudTx(metadataUri)
+					continue
+				}
+
+				metadataBytes, err := protocol.Retrieve(metadataUri)
+				if err != nil {
+					log.Error().Msgf("Failed to get metadata: %s", err)
 					SubmitFraudTx(metadataUri)
 					continue
 				}
 
 				metadata := datypes.Metadata{}
 				if err := metadata.Unmarshal(metadataBytes); err != nil {
-					log.Print("Failed to decode metadata: ", err)
+					log.Error().Msgf("Failed to decode metadata: %s", err)
 					SubmitFraudTx(metadataUri)
 					continue
 				}
 
 				if len(publishedData.ShardDoubleHashes) != len(metadata.ShardUris) {
-					log.Print("Incorrect shard data count: ", err)
+					log.Error().Msgf("Incorrect shard data count: %s", err)
 					SubmitFraudTx(metadataUri)
 					continue
 				}
 
-				for index := 0; index < len(publishedData.ShardDoubleHashes); index++ {
-					shardUri := metadata.ShardUris[index]
-					shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
-					if err != nil {
-						log.Print("Failed to get shard data: ", err)
-						SubmitFraudTx(metadataUri)
-						break
-					}
-					doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
+				validShards := [][]byte{}
 
-					if doubleShardHash != base64.StdEncoding.EncodeToString(publishedData.ShardDoubleHashes[index]) {
-						log.Print("Incorrect shard data: ", index)
-						SubmitFraudTx(metadataUri)
-						break
+				for index, doubleHash := range publishedData.ShardDoubleHashes {
+					shardUri := metadata.ShardUris[index]
+					shardData, err := protocol.Retrieve(shardUri)
+					if err != nil {
+						log.Error().Msgf("Failed to get shard data: %s", err)
+						continue
 					}
+
+					doubleShardHash := base64.StdEncoding.EncodeToString(utils.DoubleHashMimc(shardData))
+					if doubleShardHash != base64.StdEncoding.EncodeToString(doubleHash) {
+						log.Error().Msgf("Incorrect shard data: %d", index)
+						continue
+					}
+					validShards = append(validShards, shardData)
+				}
+
+				DataShardCount := len(publishedData.ShardDoubleHashes) - int(metadata.ParityShardCount)
+
+				if len(validShards) < DataShardCount {
+					log.Error().Msgf("Valid shard count less than DataShardCount: %d", len(validShards))
+					SubmitFraudTx(metadataUri)
+					continue
 				}
 			}
 		}
@@ -136,7 +159,7 @@ func SearchTxHashHandle(rpcAddr string, page int, limit int, txHeight int64) (*t
 
 	resp, err := http.Get(endpoint)
 	if err != nil {
-		log.Print("Unable to connect to ", endpoint)
+		log.Error().Msgf("Unable to connect to %s", endpoint)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -146,18 +169,18 @@ func SearchTxHashHandle(rpcAddr string, page int, limit int, txHeight int64) (*t
 	response := new(tmJsonRPCTypes.RPCResponse)
 
 	if err := json.Unmarshal(respBody, response); err != nil {
-		log.Print("Unable to decode response: ", err)
+		log.Error().Msgf("Unable to decode response: %s", err)
 		return nil, err
 	}
 
 	if response.Error != nil {
-		log.Print("Error response:", response.Error.Message)
+		log.Error().Msgf("Error response: %s", response.Error.Message)
 		return nil, errors.New(response.Error.Message)
 	}
 
 	result := new(tmTypes.ResultTxSearch)
 	if err := tmjson.Unmarshal(response.Result, result); err != nil {
-		log.Print("Failed to unmarshal result:", err)
+		log.Error().Msgf("Failed to unmarshal result: %s", err)
 		return nil, fmt.Errorf("error unmarshalling result: %w", err)
 	}
 

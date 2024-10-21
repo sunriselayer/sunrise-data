@@ -17,9 +17,10 @@ type UploadedDataResponse struct {
 }
 
 type PublishRequest struct {
-	Blob           string `json:"blob"`
-	ShardCountHalf int    `json:"shard_count_half"`
-	Protocol       string `json:"protocol"`
+	Blob             string `json:"blob"`
+	DataShardCount   int    `json:"data_shard_count"`
+	ParityShardCount int    `json:"parity_shard_count"`
+	Protocol         string `json:"protocol"`
 }
 
 type PublishResponse struct {
@@ -37,11 +38,12 @@ func Handle() {
 		w.Write([]byte("Welcome to sunrise-data API"))
 	}).Methods("GET")
 	r.HandleFunc("/api/publish", Publish).Methods("POST")
+	r.HandleFunc("/api/publish-file", PublishFile).Methods("POST")
 
-	r.HandleFunc("/api/shard_hashes", ShardHashes).Methods("GET")
-	r.HandleFunc("/api/get_blob", GetBlob).Methods("GET")
+	r.HandleFunc("/api/shard-hashes", ShardHashes).Methods("GET")
+	r.HandleFunc("/api/get-blob", GetBlob).Methods("GET")
 
-	log.Print("Running Publisher API on localhost:", scontext.Config.Api.Port)
+	log.Info().Msgf("Running Publisher API on localhost: %d", scontext.Config.Api.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", scontext.Config.Api.Port), r)
 
 }

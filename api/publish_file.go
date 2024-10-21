@@ -1,9 +1,10 @@
 package api
 
 import (
-	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/rs/zerolog/log"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
@@ -14,27 +15,45 @@ import (
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
-func Publish(w http.ResponseWriter, r *http.Request) {
-	var req PublishRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
-	if err != nil {
-		log.Error().Msgf("Failed to decode Blob %s", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func PublishFile(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20)
 
-	publishProtocol, err := protocols.GetPublishProtocol(req.Protocol)
+	fileName := r.FormValue("file_name")
+	protocol := r.FormValue("protocol")
+
+	publishProtocol, err := protocols.GetPublishProtocol(protocol)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	recoveredDataHash, err := utils.HashSha256(blobBytes)
+	dataShardCount, err := strconv.Atoi(r.FormValue("data_shard_count"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	parityShardCount, err := strconv.Atoi(r.FormValue("parity_shard_count"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile(fileName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Error().Msgf("Failed to read file %s", fileName)
+		return
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	recoveredDataHash, err := utils.HashSha256(fileBytes)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -46,16 +65,16 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if queryParamResponse.Params.MinShardCount > uint64(req.DataShardCount+req.ParityShardCount) {
+	if queryParamResponse.Params.MinShardCount > uint64(dataShardCount+parityShardCount) {
 		http.Error(w, "DataShardCount + ParityShardCount is less than Min_ShardCount", http.StatusBadRequest)
 		return
 	}
-	if queryParamResponse.Params.MaxShardCount < uint64(req.DataShardCount+req.ParityShardCount) {
+	if queryParamResponse.Params.MaxShardCount < uint64(dataShardCount+parityShardCount) {
 		http.Error(w, "DataShardCount + ParityShardCount is bigger than Max_ShardCount", http.StatusBadRequest)
 		return
 	}
 
-	shardSize, _, shards, err := erasurecoding.ErasureCode(blobBytes, req.DataShardCount, req.ParityShardCount)
+	shardSize, _, shards, err := erasurecoding.ErasureCode(fileBytes, dataShardCount, parityShardCount)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -72,7 +91,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	metadata := types.Metadata{
 		ShardSize:         shardSize,
 		RecoveredDataHash: recoveredDataHash,
-		RecoveredDataSize: uint64(len(blobBytes)),
+		RecoveredDataSize: uint64(len(fileBytes)),
 		ShardUris:         shardUris,
 	}
 	metadataBytes, err := metadata.Marshal()
@@ -92,7 +111,7 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	msg := &types.MsgPublishData{
 		Sender:            context.Addr,
 		MetadataUri:       metadataUri,
-		ParityShardCount:  uint64(req.ParityShardCount),
+		ParityShardCount:  uint64(parityShardCount),
 		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
 		DataSourceInfo:    context.Config.Api.IpfsAddrInfo,
 	}

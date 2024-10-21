@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sunriselayer/sunrise-data/retriever"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
+
+	"github.com/sunriselayer/sunrise-data/protocols"
 )
 
 func GetBlob(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +17,14 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid query parameter", http.StatusBadRequest)
 		return
 	}
-	metadataBytes, err := retriever.GetDataFromIpfsOrArweave(metadataUri)
+
+	protocol, err := protocols.GetRetrieveProtocol(metadataUri)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	metadataBytes, err := protocol.Retrieve(metadataUri)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -32,14 +40,15 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	var shards [][]byte
 
 	for _, shardUri := range shardUris {
-		shardData, err := retriever.GetDataFromIpfsOrArweave(shardUri)
+		shardData, err := protocol.Retrieve(shardUri)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			continue
 		}
 		shards = append(shards, shardData)
 	}
-	blobBytes, err := erasurecoding.JoinShards(shards, int(metadata.RecoveredDataSize))
+	DataShardCount := len(shardUris) - int(metadata.ParityShardCount)
+	blobBytes, err := erasurecoding.JoinShards(shards, DataShardCount, int(metadata.RecoveredDataSize))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
