@@ -12,6 +12,8 @@ type Arweave struct {
 	RpcUrl string
 }
 
+var _ Protocol = &Arweave{}
+
 func uploadToArweave(inputData []byte) (string, error) {
 	wallet, err := goar.NewWalletFromPath("../keyfile.json", "https://arweave.net")
 	if err != nil {

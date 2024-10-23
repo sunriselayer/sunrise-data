@@ -20,6 +20,8 @@ import (
 type Ipfs struct {
 }
 
+var _ Protocol = &Ipfs{}
+
 func uploadToIpfs(inputData []byte) (string, error) {
 	var err error
 	var node *rpc.HttpApi
