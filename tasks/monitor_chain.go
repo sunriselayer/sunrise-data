@@ -20,7 +20,6 @@ import (
 
 	"github.com/sunriselayer/sunrise-data/context"
 	"github.com/sunriselayer/sunrise-data/protocols"
-	"github.com/sunriselayer/sunrise-data/publisher"
 	"github.com/sunriselayer/sunrise-data/utils"
 )
 
@@ -83,7 +82,7 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 
 				peerAddrInfo, err := peer.AddrInfoFromString(publishedData.DataSourceInfo)
 				if err == nil {
-					publisher.ConnectSwarm(*peerAddrInfo)
+					protocols.ConnectSwarm(*peerAddrInfo)
 				}
 
 				// verify shard data
