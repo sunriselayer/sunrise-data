@@ -34,7 +34,7 @@ func GetPublishProtocol(protocol string) (Protocol, error) {
 }
 
 func GetRetrieveProtocol(uri string) (Protocol, error) {
-	if strings.Contains(uri, "ifps://") {
+	if strings.Contains(uri, "ipfs://") {
 		return &Ipfs{}, nil
 	} else if strings.Contains(uri, "ar://") {
 		return &Arweave{}, nil
