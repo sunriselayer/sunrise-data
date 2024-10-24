@@ -1524,6 +1524,10 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
+github.com/sunriselayer/sunrise v0.3.0-rc1 h1:Dmng9AL7qD2sM39iao/v2czsuWXukGTQADAY7fMhjh8=
+github.com/sunriselayer/sunrise v0.3.0-rc1/go.mod h1:MCxRS7dXWP6mN9M75MJpRU0rC43vkoyckL9F98Jw1Ww=
+github.com/sunriselayer/sunrise/x/da/erasurecoding v0.0.0-20241024013259-89fff8d362fb h1:gS1FEsM36DpBtVknntSnzM1RQ4SWNiT+1KidtvaCi5k=
+github.com/sunriselayer/sunrise/x/da/erasurecoding v0.0.0-20241024013259-89fff8d362fb/go.mod h1:W9lEayF0SD68AiHzOUS59ohq1PQW61RaZN8PoeA99Vk=
 github.com/supranational/blst v0.3.11 h1:LyU6FolezeWAhvQk0k6O/d49jqgO52MSDDfYgbeoEm4=
 github.com/supranational/blst v0.3.11/go.mod h1:jZJtfjgudtNl4en1tzwPIV3KjUnQUvG3/j+w+fVonLw=
 github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 h1:epCh84lMvA70Z7CTTCmYQn2CKbY8j86K7/FAIr141uY=

@@ -2,11 +2,7 @@ module github.com/sunriselayer/sunrise-data
 
 go 1.22.7
 
-replace (
-	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/sunriselayer/sunrise => ../sunrise
-	github.com/sunriselayer/sunrise/x/da/erasurecoding => ../sunrise/x/da/erasurecoding
-)
+replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
 replace (
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
@@ -36,8 +32,8 @@ require (
 	github.com/pelletier/go-toml v1.2.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
-	github.com/sunriselayer/sunrise v0.3.0-rc0
-	github.com/sunriselayer/sunrise/x/da/erasurecoding v0.3.0-rc0
+	github.com/sunriselayer/sunrise v0.3.0-rc1
+	github.com/sunriselayer/sunrise/x/da/erasurecoding v0.0.0-20241024013259-89fff8d362fb
 )
 
 require (
