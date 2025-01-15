@@ -101,7 +101,8 @@ Request JSON:
 ```protobuf
 {
     "blob": "Base64 Encoded string",
-    "shard_count_half": number,
+    "data_shard_count": number,
+    "parity_shard_count": number,
     "protocol": "ipfs" or "arweave"
 }
 ```
@@ -158,7 +159,8 @@ POST http://localhost:8000/api/publish
 Request
 {
     "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=",   // "12345678901234567890"
-    "shard_count_half": 10,
+    "data_shard_count": 5,
+    "parity_shard_count": 5,
     "protocol": "ipfs" // or "arweave"
 }
 
