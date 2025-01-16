@@ -24,6 +24,7 @@ type Config struct {
 	Rollkit struct {
 		DataShardCount   int `toml:"data_shard_count"`
 		ParityShardCount int `toml:"parity_shard_count"`
+		Port             int `toml:"port"`
 	}
 }
 
