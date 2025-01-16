@@ -16,8 +16,8 @@ type SunriseDA struct {
 	config config.Config
 }
 
-func NewSunriseDA(ctx context.Context, config config.Config) SunriseDA {
-	return SunriseDA{
+func NewSunriseDA(ctx context.Context, config config.Config) *SunriseDA {
+	return &SunriseDA{
 		ctx:    ctx,
 		config: config,
 	}
