@@ -32,7 +32,18 @@ func (sunrise *SunriseDA) MaxBlobSize(ctx context.Context) (uint64, error) {
 
 func (sunrise *SunriseDA) Get(ctx context.Context, ids []da.ID, namespace da.Namespace) ([]da.Blob, error) {
 	var blobs []da.Blob
-
+	for _, id := range ids {
+		metadataUri := string(id)
+		res, err := api.GetBlobData(metadataUri)
+		if err != nil {
+			return nil, err
+		}
+		decodedBlob, err := base64.StdEncoding.DecodeString(res.Blob)
+		if err != nil {
+			return nil, err
+		}
+		blobs = append(blobs, decodedBlob)
+	}
 	return blobs, nil
 }
 
@@ -76,7 +87,6 @@ func (sunrise *SunriseDA) Submit(ctx context.Context, daBlobs []da.Blob, gasPric
 		}
 		ids = append(ids, []byte(res.MetadataUri))
 	}
-
 	return ids, nil
 }
 
