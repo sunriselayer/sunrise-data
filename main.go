@@ -35,7 +35,7 @@ func main() {
 	tasks.RunTasks()
 
 	// start grpc server for rollkit
-	cmd.Serve(*config)
+	go cmd.Serve()
 
 	api.Handle()
 }
