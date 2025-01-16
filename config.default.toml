@@ -13,3 +13,7 @@ publisher_account="val"
 fees="10000urise"
 cometbft_rpc="http://localhost:26657"
 vote_extension_period=2
+
+[rollkit]
+data_shard_count=5
+parity_shard_count=5
