@@ -70,11 +70,11 @@ func (sunrise *SunriseDA) Submit(ctx context.Context, daBlobs []da.Blob, gasPric
 			ParityShardCount: int(sunrise.config.Rollkit.ParityShardCount),
 			Protocol:         "ipfs",
 		}
-		_, metadataUri, err := api.PublishData(req)
+		res, err := api.PublishData(req)
 		if err != nil {
 			return nil, err
 		}
-		ids = append(ids, []byte(metadataUri))
+		ids = append(ids, []byte(res.MetadataUri))
 	}
 
 	return ids, nil
