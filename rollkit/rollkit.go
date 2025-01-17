@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rollkit/go-da"
+	"github.com/rs/zerolog/log"
 	"github.com/sunriselayer/sunrise-data/api"
 	"github.com/sunriselayer/sunrise-data/config"
 )
@@ -72,7 +73,12 @@ func (sunrise *SunriseDA) Commit(ctx context.Context, daBlobs []da.Blob, namespa
 }
 
 func (sunrise *SunriseDA) Submit(ctx context.Context, daBlobs []da.Blob, gasPrice float64, namespace da.Namespace) ([]da.ID, error) {
+	return sunrise.SubmitWithOptions(ctx, daBlobs, gasPrice, namespace, nil)
+}
+
+func (sunrise *SunriseDA) SubmitWithOptions(ctx context.Context, daBlobs []da.Blob, gasPrice float64, namespace da.Namespace, options []byte) ([]da.ID, error) {
 	var ids []da.ID
+	log.Info().Msgf("Submitting %d blobs", len(daBlobs))
 	for _, blob := range daBlobs {
 		encodedBlob := base64.StdEncoding.EncodeToString(blob)
 		req := api.PublishRequest{
@@ -83,16 +89,17 @@ func (sunrise *SunriseDA) Submit(ctx context.Context, daBlobs []da.Blob, gasPric
 		}
 		res, err := api.PublishData(req)
 		if err != nil {
+			log.Error().Msgf("Failed to publish blob %s", err)
 			return nil, err
 		}
-		ids = append(ids, []byte(res.MetadataUri))
+		if res.MetadataUri == "" {
+			log.Error().Msgf("Failed to get metadata uri with blob %s", encodedBlob)
+		} else {
+			log.Info().Msgf("Submitted blob with metadata uri %s", res.MetadataUri)
+			ids = append(ids, []byte(res.MetadataUri))
+		}
 	}
-	return ids, nil
-}
-
-func (sunrise *SunriseDA) SubmitWithOptions(ctx context.Context, daBlobs []da.Blob, gasPrice float64, namespace da.Namespace, options []byte) ([]da.ID, error) {
-	var ids []da.ID
-
+	log.Info().Msgf("Submitted %d blobs", len(ids))
 	return ids, nil
 }
 
