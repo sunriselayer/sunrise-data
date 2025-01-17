@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/rs/zerolog/log"
@@ -21,53 +22,58 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	res, err := PublishData(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Info().Msgf("TxHash: %s", res.TxHash)
+	// Print response from broadcasting a transaction
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+func PublishData(req PublishRequest) (PublishResponse, error) {
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
 		log.Error().Msgf("Failed to decode Blob %s", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 
 	publishProtocol, err := protocols.GetPublishProtocol(req.Protocol)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 
 	recoveredDataHash, err := utils.HashSha256(blobBytes)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 
 	queryClient := types.NewQueryClient(context.NodeClient.Context())
 	queryParamResponse, err := queryClient.Params(context.Ctx, &types.QueryParamsRequest{})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 	if queryParamResponse.Params.MinShardCount > uint64(req.DataShardCount+req.ParityShardCount) {
-		http.Error(w, "DataShardCount + ParityShardCount is less than Min_ShardCount", http.StatusBadRequest)
-		return
+		return PublishResponse{}, errors.New("DataShardCount + ParityShardCount is smaller than Min_ShardCount")
 	}
 	if queryParamResponse.Params.MaxShardCount < uint64(req.DataShardCount+req.ParityShardCount) {
-		http.Error(w, "DataShardCount + ParityShardCount is bigger than Max_ShardCount", http.StatusBadRequest)
-		return
+		return PublishResponse{}, errors.New("DataShardCount + ParityShardCount is bigger than Max_ShardCount")
 	}
 
 	shardSize, _, shards, err := erasurecoding.ErasureCode(blobBytes, req.DataShardCount, req.ParityShardCount)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 	if queryParamResponse.Params.MaxShardSize < shardSize {
-		http.Error(w, "ShardSize is bigger than Max_ShardSize", http.StatusBadRequest)
-		return
+		return PublishResponse{}, errors.New("ShardSize is bigger than Max_ShardSize")
 	}
 	shardUris, err := publishProtocol.PublishShards(shards)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 	metadata := types.Metadata{
 		ShardSize:         shardSize,
@@ -77,15 +83,12 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	}
 	metadataBytes, err := metadata.Marshal()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 
-	metadataUri := ""
-	metadataUri, err = publishProtocol.PublishMetadata(metadataBytes)
+	metadataUri, err := publishProtocol.PublishMetadata(metadataBytes)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
 
 	// Define a message to create a post
@@ -100,14 +103,10 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 	// to create a post store response in txResp
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return PublishResponse{}, err
 	}
-	log.Info().Msgf("TxHash: %s", txResp.TxHash)
-	// Print response from broadcasting a transaction
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(PublishResponse{
+	return PublishResponse{
 		TxHash:      txResp.TxHash,
 		MetadataUri: metadataUri,
-	})
+	}, nil
 }

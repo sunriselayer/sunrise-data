@@ -8,8 +8,13 @@ submit_proof = true
 [chain]
 addr_prefix="sunrise"
 keyring_backend="test"
-home_path="/Users/admin/.sunrise"
-publisher_account="val"
+home_path="/home/ubuntu/.sunrise"
+publisher_account="validator"
 fees="10000urise"
 cometbft_rpc="http://localhost:26657"
 vote_extension_period=2
+
+[rollkit]
+port=7980
+data_shard_count=5
+parity_shard_count=5

@@ -21,6 +21,11 @@ type Config struct {
 		CometbftRPC         string `toml:"cometbft_rpc"`
 		VoteExtensionPeriod int    `toml:"vote_extension_period"`
 	}
+	Rollkit struct {
+		DataShardCount   int `toml:"data_shard_count"`
+		ParityShardCount int `toml:"parity_shard_count"`
+		Port             int `toml:"port"`
+	}
 }
 
 func LoadConfig() (*Config, error) {

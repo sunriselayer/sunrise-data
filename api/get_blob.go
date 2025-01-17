@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/rs/zerolog/log"
 	"github.com/sunriselayer/sunrise/x/da/erasurecoding"
 	"github.com/sunriselayer/sunrise/x/da/types"
 
@@ -18,23 +19,30 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	protocol, err := protocols.GetRetrieveProtocol(metadataUri)
+	res, err := GetBlobData(metadataUri)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
+}
+
+func GetBlobData(metadataUri string) (GetBlobResponse, error) {
+	protocol, err := protocols.GetRetrieveProtocol(metadataUri)
+	if err != nil {
+		return GetBlobResponse{}, err
+	}
 
 	metadataBytes, err := protocol.Retrieve(metadataUri)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return GetBlobResponse{}, err
 	}
 
 	metadata := types.Metadata{}
 
 	if err := metadata.Unmarshal(metadataBytes); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return GetBlobResponse{}, err
 	}
 	shardUris := metadata.ShardUris
 	var shards [][]byte
@@ -42,7 +50,7 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	for _, shardUri := range shardUris {
 		shardData, err := protocol.Retrieve(shardUri)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Error().Msgf("Failed to retrieve shard uri %s", err)
 			continue
 		}
 		shards = append(shards, shardData)
@@ -50,13 +58,10 @@ func GetBlob(w http.ResponseWriter, r *http.Request) {
 	DataShardCount := len(shardUris) - int(metadata.ParityShardCount)
 	blobBytes, err := erasurecoding.JoinShards(shards, DataShardCount, int(metadata.RecoveredDataSize))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return GetBlobResponse{}, err
 	}
 	res := GetBlobResponse{
 		Blob: base64.StdEncoding.EncodeToString(blobBytes),
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	return res, nil
 }
