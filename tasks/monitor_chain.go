@@ -75,8 +75,8 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				}
 
 				publishedData := publishedDataResponse.Data
-				if publishedData.Status != "vote_extension" {
-					log.Error().Msg("Not passed the vote extension yet")
+				if publishedData.Status != datypes.Status_STATUS_VOTING {
+					log.Error().Msg("Not passed the voting period yet")
 					continue
 				}
 
