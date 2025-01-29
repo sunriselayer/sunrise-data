@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	banktypes "cosmossdk.io/x/bank"
+	banktypes "cosmossdk.io/x/bank/types"
 	staking "cosmossdk.io/x/staking/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
@@ -64,7 +64,7 @@ type Gasometer interface {
 //
 //go:generate mockery --srcpkg . --name Signer --filename signer.go --with-expecter
 type Signer interface {
-	Sign(ctx context.Context, txf tx.Factory, name string, txBuilder client.TxBuilder, overwriteSig bool) error
+	Sign(clientCtx client.Context, txf tx.Factory, name string, txBuilder client.TxBuilder, overwriteSig bool) error
 }
 
 // Client is a client to access your chain by querying and broadcasting transactions.
@@ -82,7 +82,6 @@ type Client struct {
 	AccountRegistry cosmosaccount.Registry
 
 	accountRetriever client.AccountRetriever
-	bankQueryClient  banktypes.QueryClient
 	gasometer        Gasometer
 	signer           Signer
 
@@ -204,14 +203,6 @@ func WithAccountRetriever(accountRetriever client.AccountRetriever) Option {
 	}
 }
 
-// WithBankQueryClient sets the bank query client.
-// Already set by default.
-func WithBankQueryClient(bankQueryClient banktypes.QueryClient) Option {
-	return func(c *Client) {
-		c.bankQueryClient = bankQueryClient
-	}
-}
-
 // WithGasometer sets the gasometer.
 // Already set by default.
 func WithGasometer(gasometer Gasometer) Option {
@@ -245,7 +236,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	}
 
 	if c.RPC == nil {
-		if c.RPC, err = rpchttp.New(c.nodeAddress, "/websocket"); err != nil {
+		if c.RPC, err = rpchttp.New(c.nodeAddress); err != nil {
 			return Client{}, err
 		}
 	}
@@ -288,9 +279,6 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 
 	if c.accountRetriever == nil {
 		c.accountRetriever = authtypes.AccountRetriever{}
-	}
-	if c.bankQueryClient == nil {
-		c.bankQueryClient = banktypes.NewQueryClient(c.context)
 	}
 	if c.gasometer == nil {
 		c.gasometer = gasometer{}
@@ -536,7 +524,7 @@ func (c Client) CreateTx(goCtx context.Context, account cosmosaccount.Account, m
 		return TxService{}, errors.WithStack(err)
 	}
 
-	txUnsigned.SetFeeGranter(ctx.GetFeeGranterAddress())
+	txUnsigned.SetFeeGranter(ctx.FeeGranter)
 
 	return TxService{
 		client:        c,
@@ -595,7 +583,11 @@ func (c Client) newContext() client.Context {
 		amino             = codec.NewLegacyAmino()
 		interfaceRegistry = codectypes.NewInterfaceRegistry()
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
-		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
+		txConfig          = authtx.NewTxConfig(marshaler,
+			interfaceRegistry.SigningContext().AddressCodec(),
+			interfaceRegistry.SigningContext().ValidatorAddressCodec(),
+			authtx.DefaultSignModes,
+		)
 	)
 
 	authtypes.RegisterInterfaces(interfaceRegistry)
