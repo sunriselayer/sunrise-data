@@ -74,24 +74,25 @@ func getShardProofBytes(shardHash []byte, shardDoubleHash []byte) ([]byte, bool)
 	return proofBytes, true
 }
 
-func submitInvalidDataTx(metadataUri string) bool {
-	proofMsg := &datypes.MsgSubmitProof{
-		Sender:      context.Addr,
-		MetadataUri: metadataUri,
-		Indices:     []int64{},
-		Proofs:      [][]byte{},
-		IsValidData: false,
-	}
+// Delete this function
+// func submitInvalidDataTx(metadataUri string) bool {
+// 	proofMsg := &datypes.MsgSubmitProof{
+// 		Sender:      context.Addr,
+// 		MetadataUri: metadataUri,
+// 		Indices:     []int64{},
+// 		Proofs:      [][]byte{},
+// 		IsValidData: false,
+// 	}
 
-	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
-	if err != nil {
-		log.Error().Msgf("Failed to broadcast MsgSubmitProof transaction: %s %s", metadataUri, err)
-		return false
-	}
-	log.Info().Msgf("MsgSubmitProof TxHash: %s", txResp.TxHash)
+// 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
+// 	if err != nil {
+// 		log.Error().Msgf("Failed to broadcast MsgSubmitProof transaction: %s %s", metadataUri, err)
+// 		return false
+// 	}
+// 	log.Info().Msgf("MsgSubmitProof TxHash: %s", txResp.TxHash)
 
-	return true
-}
+// 	return true
+// }
 
 func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) bool {
 	proofMsg := &datypes.MsgSubmitProof{
@@ -99,7 +100,6 @@ func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) boo
 		MetadataUri: metadataUri,
 		Indices:     indices,
 		Proofs:      proofs,
-		IsValidData: true,
 	}
 
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
@@ -153,25 +153,25 @@ func SubmitFraudTx(metadataUri string) bool {
 	protocol, err := protocols.GetRetrieveProtocol(metadataUri)
 	if err != nil {
 		log.Error().Msgf("Failed to get protocol: %s", err)
-		return submitInvalidDataTx(metadataUri)
+		return false
 	}
 
 	// verify shard data
 	metadataBytes, err := protocol.Retrieve(metadataUri)
 	if err != nil {
 		log.Error().Msgf("Failed to get metadata: %s", err)
-		return submitInvalidDataTx(metadataUri)
+		return false
 	}
 
 	metadata := datypes.Metadata{}
 	if err := metadata.Unmarshal(metadataBytes); err != nil {
 		log.Error().Msgf("Failed to decode metadata: %s", err)
-		return submitInvalidDataTx(metadataUri)
+		return false
 	}
 
 	if len(publishedData.ShardDoubleHashes) != len(metadata.ShardUris) {
 		log.Error().Msgf("Incorrect shard data count: %d %d", len(publishedData.ShardDoubleHashes), len(metadata.ShardUris))
-		return submitInvalidDataTx(metadataUri)
+		return false
 	}
 
 	validShards := [][]byte{}
@@ -198,7 +198,7 @@ func SubmitFraudTx(metadataUri string) bool {
 
 	if len(validShards) < DataShardCount {
 		log.Error().Msgf("Valid shard count less than DataShardCount: %d", len(validShards))
-		return submitInvalidDataTx(metadataUri)
+		return false
 	}
 
 	shardLength := len(metadata.ShardUris)
