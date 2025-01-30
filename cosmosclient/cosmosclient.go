@@ -82,6 +82,7 @@ type Client struct {
 	AccountRegistry cosmosaccount.Registry
 
 	accountRetriever client.AccountRetriever
+	bankQueryClient  banktypes.QueryClient
 	gasometer        Gasometer
 	signer           Signer
 
@@ -203,6 +204,14 @@ func WithAccountRetriever(accountRetriever client.AccountRetriever) Option {
 	}
 }
 
+// WithBankQueryClient sets the bank query client.
+// Already set by default.
+func WithBankQueryClient(bankQueryClient banktypes.QueryClient) Option {
+	return func(c *Client) {
+		c.bankQueryClient = bankQueryClient
+	}
+}
+
 // WithGasometer sets the gasometer.
 // Already set by default.
 func WithGasometer(gasometer Gasometer) Option {
@@ -279,6 +288,9 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 
 	if c.accountRetriever == nil {
 		c.accountRetriever = authtypes.AccountRetriever{}
+	}
+	if c.bankQueryClient == nil {
+		c.bankQueryClient = banktypes.NewQueryClient(c.context)
 	}
 	if c.gasometer == nil {
 		c.gasometer = gasometer{}
