@@ -16,6 +16,15 @@ func ByteSlicesToDoubleHashes(inputData [][]byte) [][]byte {
 
 func HashMimc(data []byte) []byte {
 	m := native_mimc.NewMiMC()
+	// BlockSize returns the hash's underlying block size.
+	// The Write method must be able to accept any amount
+	// of data, but it may operate more efficiently if all writes
+	// are a multiple of the block size.
+	blockSize := m.BlockSize()
+	if len(data)%blockSize != 0 {
+		padding := make([]byte, blockSize-len(data)%blockSize)
+		data = append(data, padding...)
+	}
 	m.Write(data)
 	return m.Sum(nil)
 }
