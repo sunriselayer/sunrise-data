@@ -34,7 +34,7 @@ var KeyringHome = os.ExpandEnv("$HOME/.ignite/accounts")
 var ErrAccountExists = errors.New("account already exists")
 
 const (
-	AccountPrefixCosmos = "cosmos"
+	AccountPrefixSunrise = "sunrise"
 )
 
 // KeyringBackend is the backend for where keys are stored.
@@ -137,7 +137,7 @@ type Account struct {
 // Address returns the address of the account from given prefix.
 func (a Account) Address(accPrefix string) (string, error) {
 	if accPrefix == "" {
-		accPrefix = AccountPrefixCosmos
+		accPrefix = AccountPrefixSunrise
 	}
 
 	pk, err := a.Record.GetPubKey()
