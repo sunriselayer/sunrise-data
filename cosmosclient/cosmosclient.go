@@ -298,8 +298,6 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	if c.signer == nil {
 		c.signer = signer{}
 	}
-	// set address prefix in SDK global config
-	c.SetConfigAddressPrefix()
 
 	return c, nil
 }
@@ -379,7 +377,6 @@ func (c Client) WaitForTx(ctx context.Context, hash string) (*ctypes.ResultTx, e
 
 // Account returns the account with name or address equal to nameOrAddress.
 func (c Client) Account(nameOrAddress string) (cosmosaccount.Account, error) {
-	defer c.lockBech32Prefix()()
 
 	acc, err := c.AccountRegistry.GetByName(nameOrAddress)
 	if err == nil {
@@ -472,13 +469,6 @@ func (c Client) Status(ctx context.Context) (*ctypes.ResultStatus, error) {
 // protects sdktypes.Config.
 var mconf sync.Mutex
 
-func (c Client) lockBech32Prefix() (unlockFn func()) {
-	mconf.Lock()
-	config := sdktypes.GetConfig()
-	config.SetBech32PrefixForAccount(c.addressPrefix, c.addressPrefix+"pub")
-	return mconf.Unlock
-}
-
 func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, msgs ...sdktypes.Msg) (Response, error) {
 	txService, err := c.CreateTx(ctx, account, msgs...)
 	if err != nil {
@@ -489,7 +479,6 @@ func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, 
 }
 
 func (c Client) CreateTx(goCtx context.Context, account cosmosaccount.Account, msgs ...sdktypes.Msg) (TxService, error) {
-	defer c.lockBech32Prefix()()
 
 	sdkaddr, err := account.Record.GetAddress()
 	if err != nil {
