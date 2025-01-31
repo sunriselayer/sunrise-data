@@ -38,41 +38,49 @@ func Publish(w http.ResponseWriter, r *http.Request) {
 func PublishData(req PublishRequest) (PublishResponse, error) {
 	blobBytes, err := base64.StdEncoding.DecodeString(req.Blob)
 	if err != nil {
-		log.Error().Msgf("Failed to decode Blob %s", err)
+		log.Err(err).Msg("Failed to decode blob")
 		return PublishResponse{}, err
 	}
 
 	publishProtocol, err := protocols.GetPublishProtocol(req.Protocol)
 	if err != nil {
+		log.Err(err).Msg("Failed to get publish protocol")
 		return PublishResponse{}, err
 	}
 
 	recoveredDataHash, err := utils.HashSha256(blobBytes)
 	if err != nil {
+		log.Err(err).Msg("Failed to hash blob")
 		return PublishResponse{}, err
 	}
 
 	queryClient := types.NewQueryClient(context.NodeClient.Context())
 	queryParamResponse, err := queryClient.Params(context.Ctx, &types.QueryParamsRequest{})
 	if err != nil {
+		log.Err(err).Msg("Failed to query da params")
 		return PublishResponse{}, err
 	}
 	if queryParamResponse.Params.MinShardCount > uint64(req.DataShardCount+req.ParityShardCount) {
+		log.Error().Msg("DataShardCount + ParityShardCount is smaller than Min_ShardCount")
 		return PublishResponse{}, errors.New("DataShardCount + ParityShardCount is smaller than Min_ShardCount")
 	}
 	if queryParamResponse.Params.MaxShardCount < uint64(req.DataShardCount+req.ParityShardCount) {
+		log.Error().Msg("DataShardCount + ParityShardCount is bigger than Max_ShardCount")
 		return PublishResponse{}, errors.New("DataShardCount + ParityShardCount is bigger than Max_ShardCount")
 	}
 
 	shardSize, _, shards, err := erasurecoding.ErasureCode(blobBytes, req.DataShardCount, req.ParityShardCount)
 	if err != nil {
+		log.Err(err).Msg("Failed to erasure code")
 		return PublishResponse{}, err
 	}
 	if queryParamResponse.Params.MaxShardSize < shardSize {
+		log.Error().Msg("ShardSize is bigger than Max_ShardSize")
 		return PublishResponse{}, errors.New("ShardSize is bigger than Max_ShardSize")
 	}
 	shardUris, err := publishProtocol.PublishShards(shards)
 	if err != nil {
+		log.Err(err).Msg("Failed to publish shards")
 		return PublishResponse{}, err
 	}
 	metadata := types.Metadata{
@@ -83,11 +91,13 @@ func PublishData(req PublishRequest) (PublishResponse, error) {
 	}
 	metadataBytes, err := metadata.Marshal()
 	if err != nil {
+		log.Err(err).Msg("Failed to marshal metadata")
 		return PublishResponse{}, err
 	}
 
 	metadataUri, err := publishProtocol.PublishMetadata(metadataBytes)
 	if err != nil {
+		log.Err(err).Msg("Failed to publish metadata")
 		return PublishResponse{}, err
 	}
 
@@ -99,12 +109,15 @@ func PublishData(req PublishRequest) (PublishResponse, error) {
 		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
 		DataSourceInfo:    context.Config.Api.IpfsAddrInfo,
 	}
+	log.Info().Msgf("MsgPublishData: %+v", msg)
 	// Broadcast a transaction from account `alice` with the message
 	// to create a post store response in txResp
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
 	if err != nil {
+		log.Err(err).Msg("Failed to broadcast tx")
 		return PublishResponse{}, err
 	}
+	log.Info().Msgf("txHash %s, Metadata %s", txResp.TxHash, metadataUri)
 	return PublishResponse{
 		TxHash:      txResp.TxHash,
 		MetadataUri: metadataUri,
