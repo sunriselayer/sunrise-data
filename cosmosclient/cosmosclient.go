@@ -317,8 +317,9 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	if c.signer == nil {
 		c.signer = signer{}
 	}
-	// set address prefix in SDK global config
-	c.SetConfigAddressPrefix()
+	// Cosmos SDK v0.52 does not allow configuration changes after the Config is sealed.
+	// // set address prefix in SDK global config
+	// c.SetConfigAddressPrefix()
 
 	return c, nil
 }
@@ -421,15 +422,15 @@ func (c Client) Context() client.Context {
 	return c.context
 }
 
-// SetConfigAddressPrefix sets the account prefix in the SDK global config.
-func (c Client) SetConfigAddressPrefix() {
-	// TODO find a better way if possible.
-	// https://github.com/ignite/cli/issues/2744
-	mconf.Lock()
-	defer mconf.Unlock()
-	config := sdktypes.GetConfig()
-	config.SetBech32PrefixForAccount(c.addressPrefix, c.addressPrefix+"pub")
-}
+// // SetConfigAddressPrefix sets the account prefix in the SDK global config.
+// func (c Client) SetConfigAddressPrefix() {
+// 	// TODO find a better way if possible.
+// 	// https://github.com/ignite/cli/issues/2744
+// 	mconf.Lock()
+// 	defer mconf.Unlock()
+// 	config := sdktypes.GetConfig()
+// 	config.SetBech32PrefixForAccount(c.addressPrefix, c.addressPrefix+"pub")
+// }
 
 // Response of your broadcasted transaction.
 type Response struct {
@@ -751,7 +752,8 @@ func (c Client) newContext() client.Context {
 		WithGenerateOnly(c.generateOnly).
 		WithAddressCodec(addressCodec).
 		WithValidatorAddressCodec(validatorAddressCodec).
-		WithConsensusAddressCodec(consensusAddressCodec)
+		WithConsensusAddressCodec(consensusAddressCodec).
+		WithAddressPrefix(c.addressPrefix)
 }
 
 func newFactory(clientCtx client.Context) tx.Factory {
