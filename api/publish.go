@@ -116,7 +116,7 @@ func PublishData(req PublishRequest) (PublishResponse, error) {
 		log.Err(err).Msg("Failed to broadcast tx")
 		return PublishResponse{}, err
 	}
-	log.Info().Msgf("txHash %s, Metadata %s", txResp.TxHash, metadataUri)
+	log.Info().Msgf("TxHash: %s", txResp.TxHash)
 	return PublishResponse{
 		TxHash:      txResp.TxHash,
 		MetadataUri: metadataUri,
