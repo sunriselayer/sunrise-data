@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"cosmossdk.io/core/transaction"
 	banktypes "cosmossdk.io/x/bank/types"
 	staking "cosmossdk.io/x/staking/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
@@ -21,6 +23,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
+	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
@@ -42,6 +45,8 @@ var (
 
 	// ErrInvalidBlockHeight is returned when a block height value is not valid.
 	ErrInvalidBlockHeight = errors.New("block height must be greater than 0")
+
+	errCannotRetrieveFundsFromFaucet = errors.New("cannot retrieve funds from faucet")
 )
 
 const (
@@ -51,20 +56,30 @@ const (
 	defaultNodeAddress   = "http://localhost:26657"
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 300000
+
+	defaultFaucetAddress   = "http://localhost:4500"
+	defaultFaucetDenom     = "token"
+	defaultFaucetMinAmount = 100
+
+	defaultTXsPerPage = 30
+
+	searchHeight = "tx.height"
+
+	orderAsc = "asc"
 )
 
 // Gasometer allows to mock the tx.CalculateGas func.
 //
 //go:generate mockery --srcpkg . --name Gasometer --filename gasometer.go --with-expecter
 type Gasometer interface {
-	CalculateGas(clientCtx gogogrpc.ClientConn, txf tx.Factory, msgs ...sdktypes.Msg) (*txtypes.SimulateResponse, uint64, error)
+	CalculateGas(clientCtx gogogrpc.ClientConn, txf tx.Factory, msgs ...transaction.Msg) (*txtypes.SimulateResponse, uint64, error)
 }
 
 // Signer allows to mock the tx.Sign func.
 //
 //go:generate mockery --srcpkg . --name Signer --filename signer.go --with-expecter
 type Signer interface {
-	Sign(clientCtx client.Context, txf tx.Factory, name string, txBuilder client.TxBuilder, overwriteSig bool) error
+	Sign(ctx client.Context, txf tx.Factory, name string, txBuilder client.TxBuilder, overwriteSig bool) error
 }
 
 // Client is a client to access your chain by querying and broadcasting transactions.
@@ -105,6 +120,8 @@ type Client struct {
 }
 
 // Option configures your client.
+// Option, are global to the client and affect all transactions.
+// If you want to override a global option on a transaction, use the TxOptions struct.
 type Option func(*Client)
 
 // WithHome sets the data dir of your chain. This option is used to access your chain's
@@ -146,6 +163,7 @@ func WithNodeAddress(addr string) Option {
 	}
 }
 
+// WithAddressPrefix sets the address prefix on the client.
 func WithAddressPrefix(prefix string) Option {
 	return func(c *Client) {
 		c.addressPrefix = prefix
@@ -174,7 +192,8 @@ func WithGasAdjustment(gasAdjustment float64) Option {
 	}
 }
 
-// WithFees sets the fees (e.g. 10uatom).
+// WithFees sets the fees (e.g. 10uatom) on the client.
+// It will be used for all transactions if not overridden on the transaction options.
 func WithFees(fees string) Option {
 	return func(c *Client) {
 		c.fees = fees
@@ -298,6 +317,8 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	if c.signer == nil {
 		c.signer = signer{}
 	}
+	// set address prefix in SDK global config
+	c.SetConfigAddressPrefix()
 
 	return c, nil
 }
@@ -377,6 +398,7 @@ func (c Client) WaitForTx(ctx context.Context, hash string) (*ctypes.ResultTx, e
 
 // Account returns the account with name or address equal to nameOrAddress.
 func (c Client) Account(nameOrAddress string) (cosmosaccount.Account, error) {
+	defer c.lockBech32Prefix()()
 
 	acc, err := c.AccountRegistry.GetByName(nameOrAddress)
 	if err == nil {
@@ -469,7 +491,14 @@ func (c Client) Status(ctx context.Context) (*ctypes.ResultStatus, error) {
 // protects sdktypes.Config.
 var mconf sync.Mutex
 
-func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, msgs ...sdktypes.Msg) (Response, error) {
+func (c Client) lockBech32Prefix() (unlockFn func()) {
+	mconf.Lock()
+	config := sdktypes.GetConfig()
+	config.SetBech32PrefixForAccount(c.addressPrefix, c.addressPrefix+"pub")
+	return mconf.Unlock
+}
+
+func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, msgs ...transaction.Msg) (Response, error) {
 	txService, err := c.CreateTx(ctx, account, msgs...)
 	if err != nil {
 		return Response{}, err
@@ -478,43 +507,59 @@ func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, 
 	return txService.Broadcast(ctx)
 }
 
-func (c Client) CreateTx(goCtx context.Context, account cosmosaccount.Account, msgs ...sdktypes.Msg) (TxService, error) {
+// CreateTxWithOptions creates a transaction with the given options.
+// Options override global client options.
+func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.Account, options TxOptions, msgs ...transaction.Msg) (TxService, error) {
+	defer c.lockBech32Prefix()()
 
 	sdkaddr, err := account.Record.GetAddress()
 	if err != nil {
 		return TxService{}, errors.WithStack(err)
 	}
 
-	ctx := c.context.
+	clientCtx := c.context.
 		WithFromName(account.Name).
 		WithFromAddress(sdkaddr)
 
-	txf, err := c.prepareFactory(ctx)
+	txf, err := c.prepareFactory(clientCtx)
 	if err != nil {
 		return TxService{}, err
 	}
 
-	if c.gasAdjustment != 0 && c.gasAdjustment != defaultGasAdjustment {
-		txf = txf.WithGasAdjustment(c.gasAdjustment)
+	if options.Memo != "" {
+		txf = txf.WithMemo(options.Memo)
 	}
 
-	var gas uint64
-	if c.gas != "" && c.gas != GasAuto {
-		gas, err = strconv.ParseUint(c.gas, 10, 64)
-		if err != nil {
-			return TxService{}, errors.WithStack(err)
-		}
-	} else {
-		_, gas, err = c.gasometer.CalculateGas(ctx, txf, msgs...)
-		if err != nil {
-			return TxService{}, errors.WithStack(err)
-		}
-		// the simulated gas can vary from the actual gas needed for a real transaction
-		// we add an amount to ensure sufficient gas is provided
-		gas += 20000
-	}
-	txf = txf.WithGas(gas)
 	txf = txf.WithFees(c.fees)
+	if options.Fees != "" {
+		txf = txf.WithFees(options.Fees)
+	}
+
+	if options.GasLimit != 0 {
+		txf = txf.WithGas(options.GasLimit)
+	} else {
+		if c.gasAdjustment != 0 && c.gasAdjustment != defaultGasAdjustment {
+			txf = txf.WithGasAdjustment(c.gasAdjustment)
+		}
+
+		var gas uint64
+		if c.gas != "" && c.gas != GasAuto {
+			gas, err = strconv.ParseUint(c.gas, 10, 64)
+			if err != nil {
+				return TxService{}, errors.WithStack(err)
+			}
+		} else {
+			_, gas, err = c.gasometer.CalculateGas(clientCtx, txf, msgs...)
+			if err != nil {
+				return TxService{}, errors.WithStack(err)
+			}
+			// the simulated gas can vary from the actual gas needed for a real transaction
+			// we add an amount to ensure sufficient gas is provided
+			gas += 20000
+		}
+
+		txf = txf.WithGas(gas)
+	}
 
 	if c.gasPrices != "" {
 		txf = txf.WithGasPrices(c.gasPrices)
@@ -525,14 +570,105 @@ func (c Client) CreateTx(goCtx context.Context, account cosmosaccount.Account, m
 		return TxService{}, errors.WithStack(err)
 	}
 
-	txUnsigned.SetFeeGranter(ctx.FeeGranter)
+	txUnsigned.SetFeeGranter(clientCtx.FeeGranter)
 
 	return TxService{
 		client:        c,
-		clientContext: ctx,
+		clientContext: clientCtx,
 		txBuilder:     txUnsigned,
 		txFactory:     txf,
 	}, nil
+}
+
+func (c Client) CreateTx(ctx context.Context, account cosmosaccount.Account, msgs ...transaction.Msg) (TxService, error) {
+	return c.CreateTxWithOptions(ctx, account, TxOptions{}, msgs...)
+}
+
+// GetBlockTXs returns the transactions in a block.
+// The list of transactions can be empty if there are no transactions in the block
+// at the moment this method is called.
+// Tendermint might index a limited number of block so trying to fetch transactions
+// from a block that is not indexed would return an error.
+func (c Client) GetBlockTXs(ctx context.Context, height int64) (txs []TX, err error) {
+	if height == 0 {
+		return nil, ErrInvalidBlockHeight
+	}
+
+	r, err := c.RPC.Block(ctx, &height)
+	if err != nil {
+		return nil, errors.Errorf("failed to fetch block %d: %w", height, err)
+	}
+
+	query := createTxSearchByHeightQuery(height)
+
+	// TODO: improve to fetch pages in parallel (requires fetching page 1 to calculate n. of pages)
+	page := 1
+	perPage := defaultTXsPerPage
+	blockTime := r.Block.Time
+	for {
+		res, err := c.RPC.TxSearch(ctx, query, false, &page, &perPage, orderAsc)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, tx := range res.Txs {
+			txs = append(txs, TX{
+				BlockTime: blockTime,
+				Raw:       tx,
+			})
+		}
+
+		// Stop when the last page is fetched
+		if res.TotalCount <= (page * perPage) {
+			break
+		}
+
+		page++
+	}
+
+	return txs, nil
+}
+
+// CollectTXs collects transactions from multiple consecutive blocks.
+// Transactions from a single block are send to the channel only if all transactions
+// from that block are collected successfully.
+// Blocks are traversed sequentially starting from a height until the latest block height
+// available at the moment this method is called.
+// The channel might contain the transactions collected successfully up until that point
+// when an error is returned.
+func (c Client) CollectTXs(ctx context.Context, fromHeight int64, tc chan<- []TX) error {
+	defer close(tc)
+
+	latestHeight, err := c.LatestBlockHeight(ctx)
+	if err != nil {
+		return errors.Errorf("failed to fetch latest block height: %w", err)
+	}
+
+	if fromHeight == 0 {
+		fromHeight = 1
+	}
+
+	for height := fromHeight; height <= latestHeight; height++ {
+		txs, err := c.GetBlockTXs(ctx, height)
+		if err != nil {
+			return err
+		}
+
+		// Ignore blocks without transactions
+		if txs == nil {
+			continue
+		}
+
+		// Make sure that collection finishes if the context
+		// is done when the transactions channel is full
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case tc <- txs:
+		}
+	}
+
+	return nil
 }
 
 // handleBroadcastResult handles the result of broadcast messages result and checks if an error occurred.
@@ -580,15 +716,15 @@ func (c *Client) prepareFactory(clientCtx client.Context) (tx.Factory, error) {
 }
 
 func (c Client) newContext() client.Context {
+	addressCodec := addresscodec.NewBech32Codec(c.addressPrefix)
+	validatorAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "val")
+	consensusAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "cons")
+
 	var (
 		amino             = codec.NewLegacyAmino()
 		interfaceRegistry = codectypes.NewInterfaceRegistry()
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
-		txConfig          = authtx.NewTxConfig(marshaler,
-			interfaceRegistry.SigningContext().AddressCodec(),
-			interfaceRegistry.SigningContext().ValidatorAddressCodec(),
-			authtx.DefaultSignModes,
-		)
+		txConfig          = authtx.NewTxConfig(marshaler, addressCodec, validatorAddressCodec, authtx.DefaultSignModes)
 	)
 
 	authtypes.RegisterInterfaces(interfaceRegistry)
@@ -612,7 +748,10 @@ func (c Client) newContext() client.Context {
 		WithClient(c.RPC).
 		WithSkipConfirmation(true).
 		WithKeyring(c.AccountRegistry.Keyring).
-		WithGenerateOnly(c.generateOnly)
+		WithGenerateOnly(c.generateOnly).
+		WithAddressCodec(addressCodec).
+		WithValidatorAddressCodec(validatorAddressCodec).
+		WithConsensusAddressCodec(consensusAddressCodec)
 }
 
 func newFactory(clientCtx client.Context) tx.Factory {
@@ -624,4 +763,10 @@ func newFactory(clientCtx client.Context) tx.Factory {
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
 		WithTxConfig(clientCtx.TxConfig)
+}
+
+func createTxSearchByHeightQuery(height int64) string {
+	params := url.Values{}
+	params.Set(searchHeight, strconv.FormatInt(height, 10))
+	return params.Encode()
 }
