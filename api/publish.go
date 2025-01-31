@@ -109,7 +109,6 @@ func PublishData(req PublishRequest) (PublishResponse, error) {
 		ShardDoubleHashes: utils.ByteSlicesToDoubleHashes(shards),
 		DataSourceInfo:    context.Config.Api.IpfsAddrInfo,
 	}
-	log.Info().Msgf("MsgPublishData: %+v", msg)
 	// Broadcast a transaction from account `alice` with the message
 	// to create a post store response in txResp
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
