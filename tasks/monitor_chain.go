@@ -75,10 +75,10 @@ func MonitorBlock(txConfig client.TxConfig, syncBlock int64) {
 				}
 
 				publishedData := publishedDataResponse.Data
-				if publishedData.Status != datypes.Status_STATUS_VOTING {
-					log.Error().Msg("Not passed the voting period yet")
-					continue
-				}
+				// if publishedData.Status != datypes.Status_STATUS_VOTING {
+				// 	log.Error().Msg("Not passed the voting period yet")
+				// 	continue
+				// }
 
 				peerAddrInfo, err := peer.AddrInfoFromString(publishedData.DataSourceInfo)
 				if err == nil {

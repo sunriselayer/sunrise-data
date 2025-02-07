@@ -74,28 +74,8 @@ func getShardProofBytes(shardHash []byte, shardDoubleHash []byte) ([]byte, bool)
 	return proofBytes, true
 }
 
-// Delete this function
-// func submitInvalidDataTx(metadataUri string) bool {
-// 	proofMsg := &datypes.MsgSubmitProof{
-// 		Sender:      context.Addr,
-// 		MetadataUri: metadataUri,
-// 		Indices:     []int64{},
-// 		Proofs:      [][]byte{},
-// 		IsValidData: false,
-// 	}
-
-// 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
-// 	if err != nil {
-// 		log.Error().Msgf("Failed to broadcast MsgSubmitProof transaction: %s %s", metadataUri, err)
-// 		return false
-// 	}
-// 	log.Info().Msgf("MsgSubmitProof TxHash: %s", txResp.TxHash)
-
-// 	return true
-// }
-
-func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) bool {
-	proofMsg := &datypes.MsgSubmitProof{
+func submitValidityProof(metadataUri string, indices []int64, proofs [][]byte) bool {
+	proofMsg := &datypes.MsgSubmitValidityProof{
 		Sender:      context.Addr,
 		MetadataUri: metadataUri,
 		Indices:     indices,
@@ -112,20 +92,22 @@ func submitValidDataTx(metadataUri string, indices []int64, proofs [][]byte) boo
 	return true
 }
 
-func submitChallengeForFraud(metadataUri string) bool {
-	msg := &datypes.MsgChallengeForFraud{
+func submitInvalidity(metadataUri string, indices []int64) bool {
+	msg := &datypes.MsgSubmitInvalidity{
 		Sender:      context.Addr,
 		MetadataUri: metadataUri,
+		Indices:     indices,
 	}
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, msg)
 	if err != nil {
-		log.Error().Msgf("Failed to broadcast MsgChallengeForFraud transaction: %s %s", metadataUri, err)
+		log.Error().Msgf("Failed to broadcast MsgSubmitInvalidity transaction: %s %s", metadataUri, err)
 		return false
 	}
-	log.Info().Msgf("ChallengeForFraud TxHash: %s", txResp.TxHash)
+	log.Info().Msgf("MsgSubmitInvalidity TxHash: %s", txResp.TxHash)
 	return true
 }
 
+// TODO Fix it
 func SubmitFraudTx(metadataUri string) bool {
 	publishedDataResponse, err := context.QueryClient.PublishedData(context.Ctx, &datypes.QueryPublishedDataRequest{MetadataUri: metadataUri})
 	if err != nil {
@@ -140,7 +122,7 @@ func SubmitFraudTx(metadataUri string) bool {
 	}
 
 	if context.Config.Api.SubmitChallenge {
-		ok := submitChallengeForFraud(metadataUri)
+		ok := submitInvalidity(metadataUri, []int64{})
 		if !ok {
 			return false
 		}
@@ -239,5 +221,5 @@ func SubmitFraudTx(metadataUri string) bool {
 		}
 	}
 
-	return submitValidDataTx(metadataUri, indices, proofs)
+	return submitValidityProof(metadataUri, indices, proofs)
 }
