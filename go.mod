@@ -52,7 +52,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
-	github.com/sunriselayer/sunrise v0.4.0-rc4
+	github.com/sunriselayer/sunrise v0.4.0-rc8
 	github.com/sunriselayer/sunrise/x/da/erasurecoding v0.0.0-20241024013259-89fff8d362fb
 )
 
