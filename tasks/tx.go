@@ -80,10 +80,10 @@ func submitValidityProof(metadataUri string, indices []int64, proofs [][]byte) b
 
 	txResp, err := context.NodeClient.BroadcastTx(context.Ctx, context.Account, proofMsg)
 	if err != nil {
-		log.Error().Msgf("Failed to broadcast MsgSubmitProof transaction: %s %s", metadataUri, err)
+		log.Error().Msgf("Failed to broadcast MsgSubmitValidityProof transaction: %s %s", metadataUri, err)
 		return false
 	}
-	log.Info().Msgf("MsgSubmitProof TxHash: %s", txResp.TxHash)
+	log.Info().Msgf("MsgSubmitValidityProof TxHash: %s", txResp.TxHash)
 
 	return true
 }

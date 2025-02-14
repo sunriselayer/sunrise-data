@@ -11,9 +11,10 @@ keyring_backend="test"
 home_path="/home/ubuntu/.sunrise"
 publisher_account="your_publisher"
 proof_deputy_account="your_deputy"
-validator_address="sunrisevaloper1a8jcsmla6heu99ldtazc27dna4qcd4jyv75vcz"
+validator_address="" # if you are not a validator, leave it empty
 fees="10000urise"
-cometbft_rpc="http://localhost:26657"
+sunrised_rpc="http://localhost:26657"
+validator_proof_interval=5
 
 [rollkit]
 port=7980

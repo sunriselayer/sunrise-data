@@ -13,14 +13,15 @@ type Config struct {
 		SubmitProof     bool   `toml:"submit_proof"`
 	}
 	Chain struct {
-		AddrPrefix         string `toml:"addr_prefix"`
-		PublisherAccount   string `toml:"publisher_account"`
-		ProofDeputyAccount string `toml:"proof_deputy_account"`
-		ValidatorAddress   string `toml:"validator_address"`
-		HomePath           string `toml:"home_path"`
-		KeyringBackend     string `toml:"keyring_backend"`
-		Fees               string `toml:"fees"`
-		CometbftRPC        string `toml:"cometbft_rpc"`
+		AddrPrefix             string `toml:"addr_prefix"`
+		PublisherAccount       string `toml:"publisher_account"`
+		ProofDeputyAccount     string `toml:"proof_deputy_account"`
+		ValidatorAddress       string `toml:"validator_address"`
+		HomePath               string `toml:"home_path"`
+		KeyringBackend         string `toml:"keyring_backend"`
+		Fees                   string `toml:"fees"`
+		SunrisedRPC            string `toml:"sunrised_rpc"`
+		ValidatorProofInterval int    `toml:"validator_proof_interval"`
 	}
 	Rollkit struct {
 		DataShardCount   int `toml:"data_shard_count"`

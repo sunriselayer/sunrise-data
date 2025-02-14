@@ -15,7 +15,7 @@ import (
 )
 
 func Monitor() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(time.Duration(context.Config.Chain.ValidatorProofInterval) * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -35,6 +35,7 @@ func MonitorChallengingData() {
 		log.Error().Msg("validator_address is empty in config.toml")
 		return
 	}
+	log.Info().Msgf("Fetching published data from sunrised...")
 	allPublishedDataResponse, err := context.QueryClient.AllPublishedData(context.Ctx, &datypes.QueryAllPublishedDataRequest{})
 	if err != nil {
 		log.Error().Msgf("Failed to query all-published-data from on-chain: %s", err)
@@ -45,11 +46,12 @@ func MonitorChallengingData() {
 		if data.Status == datypes.Status_STATUS_CHALLENGING {
 			_, err := context.QueryClient.ValidityProof(context.Ctx, &datypes.QueryValidityProofRequest{MetadataUri: data.MetadataUri, ValidatorAddress: context.Config.Chain.ValidatorAddress})
 			if err != nil {
+				log.Info().Msgf("Detected new challenging data: %s", data.MetadataUri)
 				SubmitProofTx(data)
 			}
-			continue
 		}
 	}
+	log.Info().Msgf("Finished monitoring challenging data")
 }
 
 func SubmitProofTx(data datypes.PublishedData) bool {
