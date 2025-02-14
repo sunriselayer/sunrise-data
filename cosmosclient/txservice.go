@@ -29,8 +29,6 @@ func (s TxService) Gas() uint64 {
 // again. Note that this may still end with the same error if the amount is
 // greater than the amount dumped by the faucet.
 func (s TxService) Broadcast(ctx context.Context) (Response, error) {
-	defer s.client.lockBech32Prefix()()
-
 	// validate msgs.
 	for _, msg := range s.txBuilder.GetTx().GetMsgs() {
 		msg, ok := msg.(sdktypes.HasValidateBasic)
@@ -42,8 +40,8 @@ func (s TxService) Broadcast(ctx context.Context) (Response, error) {
 		}
 	}
 
-	accountName := s.clientContext.GetFromName()
-	if err := s.client.signer.Sign(ctx, s.txFactory, accountName, s.txBuilder, true); err != nil {
+	accountName := s.clientContext.FromName
+	if err := s.client.signer.Sign(s.client.context, s.txFactory, accountName, s.txBuilder, true); err != nil {
 		return Response{}, errors.WithStack(err)
 	}
 
