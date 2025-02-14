@@ -30,6 +30,7 @@ func main() {
 		panic(err)
 	}
 
+	// TODO check rpc is enabled
 	context.GetContext(*config)
 
 	tasks.RunTasks()
