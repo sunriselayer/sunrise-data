@@ -9,10 +9,11 @@ submit_proof = true
 addr_prefix="sunrise"
 keyring_backend="test"
 home_path="/home/ubuntu/.sunrise"
-publisher_account="validator"
+publisher_account="your_publisher"
+proof_deputy_account="your_deputy"
+validator_address="sunrisevaloper1a8jcsmla6heu99ldtazc27dna4qcd4jyv75vcz"
 fees="10000urise"
 cometbft_rpc="http://localhost:26657"
-vote_extension_period=2
 
 [rollkit]
 port=7980
