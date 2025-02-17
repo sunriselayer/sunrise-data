@@ -13,20 +13,21 @@ var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Start the API server",
 	Long:  `This command starts the API server.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := config.LoadConfig()
 		if err != nil {
 			log.Error().Msgf("Failed to load config: %s", err)
-			return
+			return err
 		}
 
 		err = context.GetPublishContext(*config)
 		if err != nil {
 			log.Error().Msgf("Failed to connect to sunrised RPC: %s", err)
-			return
+			return err
 		}
 
 		api.Handle()
+		return nil
 	},
 }
 
