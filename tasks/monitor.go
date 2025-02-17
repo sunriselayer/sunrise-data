@@ -15,7 +15,7 @@ import (
 )
 
 func Monitor() {
-	ticker := time.NewTicker(time.Duration(context.Config.Chain.ValidatorProofInterval) * time.Second)
+	ticker := time.NewTicker(time.Duration(context.Config.Validator.ProofInterval) * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -31,7 +31,8 @@ func Monitor() {
 }
 
 func MonitorChallengingData() {
-	if context.Config.Chain.ValidatorAddress == "" {
+	validatorAddress := context.Config.Validator.ValidatorAddress
+	if validatorAddress == "" {
 		log.Error().Msg("validator_address is empty in config.toml")
 		return
 	}
@@ -44,7 +45,7 @@ func MonitorChallengingData() {
 	allData := allPublishedDataResponse.Data
 	for _, data := range allData {
 		if data.Status == datypes.Status_STATUS_CHALLENGING {
-			_, err := context.QueryClient.ValidityProof(context.Ctx, &datypes.QueryValidityProofRequest{MetadataUri: data.MetadataUri, ValidatorAddress: context.Config.Chain.ValidatorAddress})
+			_, err := context.QueryClient.ValidityProof(context.Ctx, &datypes.QueryValidityProofRequest{MetadataUri: data.MetadataUri, ValidatorAddress: validatorAddress})
 			if err != nil {
 				log.Info().Msgf("Detected new challenging data: %s", data.MetadataUri)
 				SubmitProofTx(data)
@@ -117,9 +118,10 @@ func SubmitProofTx(data datypes.PublishedData) bool {
 	}
 
 	threshold := queryThresholdResponse.Threshold
-	validator, err := sdk.ValAddressFromBech32(context.Config.Chain.ValidatorAddress)
+	validatorAddress := context.Config.Validator.ValidatorAddress
+	validator, err := sdk.ValAddressFromBech32(validatorAddress)
 	if err != nil {
-		log.Error().Msgf("Failed to parse ValidatorAddress: %s %s", context.Config.Chain.ValidatorAddress, err)
+		log.Error().Msgf("Failed to parse ValidatorAddress: %s %s", validatorAddress, err)
 		return false
 	}
 

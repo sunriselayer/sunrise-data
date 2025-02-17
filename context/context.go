@@ -20,21 +20,42 @@ var (
 	Config      config.Config
 )
 
-func GetContext(conf config.Config) {
+func GetPublishContext(conf config.Config) {
 	Config = conf
 	Ctx = context.Background()
 	NodeClient, _ = cosmosclient.New(
 		Ctx,
-		cosmosclient.WithAddressPrefix(conf.Chain.AddrPrefix),
+		cosmosclient.WithNodeAddress(conf.Chain.SunrisedRPC),
+		cosmosclient.WithAddressPrefix(conf.Chain.AddressPrefix),
 		cosmosclient.WithKeyringBackend(cosmosaccount.KeyringBackend(conf.Chain.KeyringBackend)),
 		cosmosclient.WithHome(conf.Chain.HomePath),
-		cosmosclient.WithFees(conf.Chain.Fees),
+		cosmosclient.WithFees(conf.Publish.PublishFees),
 		cosmosclient.WithGasAdjustment(1.5),
 		cosmosclient.WithGas(cosmosclient.GasAuto),
 	)
 	QueryClient = datypes.NewQueryClient(NodeClient.Context())
 
-	// Get account from the keyring
-	Account, _ = NodeClient.Account(conf.Chain.PublisherAccount)
-	Addr, _ = Account.Address(conf.Chain.AddrPrefix)
+	// Get publisher account from the keyring
+	Account, _ = NodeClient.Account(conf.Publish.PublisherAccount)
+	Addr, _ = Account.Address(conf.Chain.AddressPrefix)
+}
+
+func GetProofContext(conf config.Config) {
+	Config = conf
+	Ctx = context.Background()
+	NodeClient, _ = cosmosclient.New(
+		Ctx,
+		cosmosclient.WithNodeAddress(conf.Chain.SunrisedRPC),
+		cosmosclient.WithAddressPrefix(conf.Chain.AddressPrefix),
+		cosmosclient.WithKeyringBackend(cosmosaccount.KeyringBackend(conf.Chain.KeyringBackend)),
+		cosmosclient.WithHome(conf.Chain.HomePath),
+		cosmosclient.WithFees(conf.Validator.ProofFees),
+		cosmosclient.WithGasAdjustment(1.5),
+		cosmosclient.WithGas(cosmosclient.GasAuto),
+	)
+	QueryClient = datypes.NewQueryClient(NodeClient.Context())
+
+	// Get deputy account from the keyring
+	Account, _ = NodeClient.Account(conf.Validator.ProofDeputyAccount)
+	Addr, _ = Account.Address(conf.Chain.AddressPrefix)
 }

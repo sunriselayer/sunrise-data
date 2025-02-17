@@ -72,7 +72,7 @@ func getShardProofBytes(shardHash []byte, shardDoubleHash []byte) ([]byte, bool)
 func submitValidityProof(metadataUri string, indices []int64, proofs [][]byte) bool {
 	proofMsg := &datypes.MsgSubmitValidityProof{
 		Sender:           context.Addr,
-		ValidatorAddress: context.Config.Chain.ValidatorAddress,
+		ValidatorAddress: context.Config.Validator.ValidatorAddress,
 		MetadataUri:      metadataUri,
 		Indices:          indices,
 		Proofs:           proofs,
