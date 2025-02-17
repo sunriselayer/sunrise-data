@@ -1,4 +1,4 @@
-package tasks
+package validator
 
 import (
 	"bufio"

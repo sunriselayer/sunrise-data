@@ -1,4 +1,4 @@
-package tasks
+package validator
 
 import (
 	"encoding/base64"
@@ -15,6 +15,7 @@ import (
 )
 
 func Monitor() {
+	log.Info().Msgf("On-chain data is checked every %v sec", context.Config.Validator.ProofInterval)
 	ticker := time.NewTicker(time.Duration(context.Config.Validator.ProofInterval) * time.Second)
 	quit := make(chan struct{})
 	go func() {
@@ -36,7 +37,7 @@ func MonitorChallengingData() {
 		log.Error().Msg("validator_address is empty in config.toml")
 		return
 	}
-	log.Info().Msgf("Fetching published data from sunrised...")
+	log.Debug().Msgf("Fetching published data from sunrised...")
 	allPublishedDataResponse, err := context.QueryClient.AllPublishedData(context.Ctx, &datypes.QueryAllPublishedDataRequest{})
 	if err != nil {
 		log.Error().Msgf("Failed to query all-published-data from on-chain: %s", err)
@@ -52,7 +53,7 @@ func MonitorChallengingData() {
 			}
 		}
 	}
-	log.Info().Msgf("Finished monitoring challenging data")
+	log.Debug().Msgf("Finished monitoring challenging data")
 }
 
 func SubmitProofTx(data datypes.PublishedData) bool {
