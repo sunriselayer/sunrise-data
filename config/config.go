@@ -8,23 +8,28 @@ type Config struct {
 	Api struct {
 		Port            int    `toml:"port"`
 		IpfsApiUrl      string `toml:"ipfs_api_url"`
-		IpfsAddrInfo    string `toml:"ipfs_addrinfo"`
-		SubmitChallenge bool   `toml:"submit_challenge"`
-		SubmitProof     bool   `toml:"submit_proof"`
+		IpfsAddressInfo string `toml:"ipfs_address_info"`
 	}
 	Chain struct {
-		AddrPrefix          string `toml:"addr_prefix"`
-		PublisherAccount    string `toml:"publisher_account"`
-		HomePath            string `toml:"home_path"`
-		KeyringBackend      string `toml:"keyring_backend"`
-		Fees                string `toml:"fees"`
-		CometbftRPC         string `toml:"cometbft_rpc"`
-		VoteExtensionPeriod int    `toml:"vote_extension_period"`
+		AddressPrefix  string `toml:"address_prefix"`
+		HomePath       string `toml:"home_path"`
+		KeyringBackend string `toml:"keyring_backend"`
+		SunrisedRPC    string `toml:"sunrised_rpc"`
+	}
+	Publish struct {
+		PublisherAccount string `toml:"publisher_account"`
+		PublishFees      string `toml:"publish_fees"`
+	}
+	Validator struct {
+		ProofDeputyAccount string `toml:"proof_deputy_account"`
+		ValidatorAddress   string `toml:"validator_address"`
+		ProofFees          string `toml:"proof_fees"`
+		ProofInterval      int    `toml:"proof_interval"`
 	}
 	Rollkit struct {
+		Port             int `toml:"port"`
 		DataShardCount   int `toml:"data_shard_count"`
 		ParityShardCount int `toml:"parity_shard_count"`
-		Port             int `toml:"port"`
 	}
 }
 

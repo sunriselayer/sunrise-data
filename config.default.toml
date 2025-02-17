@@ -1,18 +1,23 @@
 [api]
 port = 8000
-ipfs_api_url = ""
-ipfs_addrinfo = ""
-submit_challenge = true
-submit_proof = true
+ipfs_api_url = "" // To connect to a local IPFS daemon, leave this empty
+ipfs_address_info = ""
 
 [chain]
-addr_prefix="sunrise"
-keyring_backend="test"
+address_prefix="sunrise"
 home_path="/home/ubuntu/.sunrise"
-publisher_account="validator"
-fees="10000urise"
-cometbft_rpc="http://localhost:26657"
-vote_extension_period=2
+keyring_backend="test"
+sunrised_rpc="http://localhost:26657"
+
+[publish]
+publisher_account="your_publisher"
+publish_fees="10000urise"
+
+[validator]
+proof_deputy_account="your_deputy"
+validator_address="" # if you are not a validator, leave this empty
+proof_fees="10000urise"
+proof_interval=5
 
 [rollkit]
 port=7980

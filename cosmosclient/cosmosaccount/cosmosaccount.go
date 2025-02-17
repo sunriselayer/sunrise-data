@@ -7,6 +7,8 @@ import (
 	"os"
 
 	dkeyring "github.com/99designs/keyring"
+	"github.com/cosmos/go-bip39"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -15,7 +17,6 @@ import (
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/go-bip39"
 
 	"github.com/sunriselayer/sunrise-data/cosmosclient/errors"
 )
@@ -34,7 +35,7 @@ var KeyringHome = os.ExpandEnv("$HOME/.ignite/accounts")
 var ErrAccountExists = errors.New("account already exists")
 
 const (
-	AccountPrefixCosmos = "cosmos"
+	AccountPrefixSunrise = "sunrise"
 )
 
 // KeyringBackend is the backend for where keys are stored.
@@ -137,7 +138,7 @@ type Account struct {
 // Address returns the address of the account from given prefix.
 func (a Account) Address(accPrefix string) (string, error) {
 	if accPrefix == "" {
-		accPrefix = AccountPrefixCosmos
+		accPrefix = AccountPrefixSunrise
 	}
 
 	pk, err := a.Record.GetPubKey()
@@ -334,7 +335,7 @@ func (r Registry) DeleteByName(name string) error {
 }
 
 func (r Registry) hdPath() string {
-	return hd.CreateHDPath(sdktypes.GetConfig().GetCoinType(), 0, 0).String()
+	return hd.CreateHDPath(sdktypes.CoinType, 0, 0).String()
 }
 
 func (r Registry) algo() (keyring.SignatureAlgo, error) {

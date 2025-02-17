@@ -1,4 +1,4 @@
-package cmd
+package rollkit
 
 import (
 	"context"
@@ -9,14 +9,13 @@ import (
 	proxy "github.com/rollkit/go-da/proxy/grpc"
 	"github.com/rs/zerolog/log"
 	scontext "github.com/sunriselayer/sunrise-data/context"
-	"github.com/sunriselayer/sunrise-data/rollkit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 func Serve() {
 	ctx := context.Background()
-	da := rollkit.NewSunriseDA(ctx, scontext.Config)
+	da := NewSunriseDA(ctx, scontext.Config)
 	srv := proxy.NewServer(da, grpc.Creds(insecure.NewCredentials()))
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", scontext.Config.Rollkit.Port))
 	if err != nil {
