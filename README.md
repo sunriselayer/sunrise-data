@@ -10,7 +10,7 @@ sunrise-data uses IPFS protocol to upload metadata and shard to IPFS.
 
 ### 1. Download and extract ipfs node binary
 
-We can download official prebuilt binaries from https://dist.ipfs.tech#kubo and Extract 'kubo_v0.29.0_linux-amd64.tar.gz" after download.
+You can download official prebuilt binaries from [IPFS kubo](https://dist.ipfs.tech#kubo) and Extract `kubo_v0.31.0_linux-amd64.tar.gz` after download.
 
 ```bash
 wget https://dist.ipfs.tech/kubo/v0.29.0/kubo_v0.29.0_darwin-amd64.tar.gz
@@ -18,7 +18,7 @@ wget https://dist.ipfs.tech/kubo/v0.29.0/kubo_v0.29.0_darwin-amd64.tar.gz
 
 ### 2. Install IPFS
 
-MacOS
+macOS
 
 ```bash
 mv ./kubo/ipfs /usr/local/bin/
@@ -27,33 +27,35 @@ mv ./kubo/ipfs /usr/local/bin/
 Linux
 
 ```bash
-$ cd kubo_v0.29.0_linux-amd64/kubo
-$ sudo ./install.sh
+wget https://dist.ipfs.tech/kubo/v0.31.0/kubo_v0.31.0_linux-amd64.tar.gz
+tar -xvzf kubo_v0.31.0_linux-amd64.tar.gz
+cd kubo
+sudo ./install.sh
 ```
 
 To check ipfs has been installed.
 
 ```bash
-$ ipfs version
-ipfs version 0.29.0
+ipfs version
+　ipfs version 0.31.0
 ```
 
 ### 3. Initialize IPFS
 
 ```bash
-$ ipfs init --profile=lowpower
+ipfs init --profile=lowpower
 ```
 
 ### 4. Run IPFS as daemon
 
 ```bash
-$ ipfs daemon
+ipfs daemon
 ```
 
 ### 5. Get IPFS node id
 
 ```bash
-$ ipfs id
+ipfs id
 ```
 
 ### 6. Add a remote IPFS node to the peer list
@@ -62,14 +64,15 @@ $ ipfs id
 $ ipfs bootstrap add /ip4/13.114.102.20/tcp/4001/p2p/12D3KooWSBJ1warTMHy7bdaViev6udyWU8XBnz9QCYS8TSX9qadt
 ```
 
-You can visit http://localhost:8080/ipfs to check runing IPFS RPC.
+You can visit `http://localhost:8080/ipfs` to check runing IPFS RPC.
 
 ## Store project
+
 This project need to store in directory stored "sunrise" codebase
 
 ```bash
-$ ls
-  sunrise
+ls
+　sunrise
   sunrise-data
 ```
 
@@ -78,23 +81,32 @@ $ ls
 - Prepare config.toml
   Copy config.default.toml to config.toml and replace your configurations.
 
-  Note: To connect to a local IPFS daemon, leave the `ipfs_api_url` field empty. For a remote IPFS daemon, specify the HTTP URL along with the rpc port number, e.g. `http://1.2.3.4:5001`.
+  To connect to a local IPFS daemon, leave the `ipfs_api_url` field empty. 
+　For a remote IPFS daemon, specify the HTTP URL along with the rpc port number, e.g. `http://1.2.3.4:5001`.
+
+　`home_path` is your `sunrised` installed path.
+　`publisher_account` is your publisher account name in your `sunrised` keyring.
+
+  if you are not a validator, leave `proof_deputy_account` & `validator_address` empty.
 
 - Run daemon
+
 ```sh
-$ make dev
+make dev
 ```
 
 - Install daemon
-```sh
-$ make install
-$ sunrise-data
-```
 
+```sh
+make install
+sunrise-data api # if you use api service for OP-Stack, etc.
+sunrise-data rollkit # if you publish data from rollkit
+sunrise-data validator # if you are a validator
+```
 
 ## API Endpoint
 
-### 1. POST http://localhost:8000/api/publish
+### 1. POST `http://localhost:8000/api/publish`
 
 Request JSON:
 
@@ -115,7 +127,7 @@ Response JSON:
 }
 ```
 
-### 2. GET http://localhost:8000/api/shard-hashes?metadata_uri=[metadata_uri]&indices=1,2,3
+### 2. GET `http://localhost:8000/api/shard-hashes?metadata_uri=[metadata_uri]&indices=1,2,3`
 
 Response:
 
@@ -136,7 +148,7 @@ Response:
 }
 ```
 
-### 3. GET http://localhost:8000/api/get-blob?metadata_uri
+### 3. GET `http://localhost:8000/api/get-blob?metadata_uri`
 
 Response:
 
