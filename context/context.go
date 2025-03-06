@@ -2,7 +2,9 @@ package context
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/rs/zerolog/log"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
 	"github.com/sunriselayer/sunrise-data/config"
@@ -22,6 +24,12 @@ var (
 func GetPublishContext(conf config.Config) error {
 	Config = conf
 	Ctx = context.Background()
+
+	if conf.Chain.SunrisedRPC == "" {
+		return fmt.Errorf("sunrised_rpc is not configured")
+	}
+	log.Info().Msgf("sunrised_rpc: %s", conf.Chain.SunrisedRPC)
+
 	NodeClient, err := cosmosclient.New(
 		Ctx,
 		cosmosclient.WithNodeAddress(conf.Chain.SunrisedRPC),
@@ -33,7 +41,7 @@ func GetPublishContext(conf config.Config) error {
 		cosmosclient.WithGas(cosmosclient.GasAuto),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create cosmos client: %w", err)
 	}
 	QueryClient = datypes.NewQueryClient(NodeClient.Context())
 
@@ -52,6 +60,12 @@ func GetPublishContext(conf config.Config) error {
 func GetProofContext(conf config.Config) error {
 	Config = conf
 	Ctx = context.Background()
+
+	if conf.Chain.SunrisedRPC == "" {
+		return fmt.Errorf("sunrised_rpc is not configured")
+	}
+	log.Info().Msgf("sunrised_rpc: %s", conf.Chain.SunrisedRPC)
+
 	NodeClient, err := cosmosclient.New(
 		Ctx,
 		cosmosclient.WithNodeAddress(conf.Chain.SunrisedRPC),
@@ -63,12 +77,18 @@ func GetProofContext(conf config.Config) error {
 		cosmosclient.WithGas(cosmosclient.GasAuto),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create cosmos client: %w", err)
 	}
+
+	_, err = NodeClient.Status(Ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to RPC at %s: %w", conf.Chain.SunrisedRPC, err)
+	}
+
 	QueryClient = datypes.NewQueryClient(NodeClient.Context())
 
 	// Get deputy account from the keyring
-	Account, err := NodeClient.Account(conf.Validator.ProofDeputyAccount)
+	Account, err = NodeClient.Account(conf.Validator.ProofDeputyAccount)
 	if err != nil {
 		return err
 	}
