@@ -34,6 +34,7 @@ import (
 	gogogrpc "github.com/cosmos/gogoproto/grpc"
 	"github.com/cosmos/gogoproto/proto"
 	prototypes "github.com/cosmos/gogoproto/types"
+	"github.com/rs/zerolog/log"
 	"github.com/sunriselayer/sunrise-data/cosmosclient/cosmosaccount"
 	"github.com/sunriselayer/sunrise-data/cosmosclient/errors"
 )
@@ -552,7 +553,10 @@ func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.A
 		} else {
 			_, gas, err = c.gasometer.CalculateGas(clientCtx, txf, msgs...)
 			if err != nil {
-				return TxService{}, errors.WithStack(err)
+				log.Error().Msgf("CalculateGas error")
+				gas = 800000
+			} else {
+				log.Info().Msgf("calculated gas: %v", gas)
 			}
 			// the simulated gas can vary from the actual gas needed for a real transaction
 			// we add an amount to ensure sufficient gas is provided
