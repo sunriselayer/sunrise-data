@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	datypes "github.com/sunriselayer/sunrise/x/da/types"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sunriselayer/sunrise-data/config"
 	"github.com/sunriselayer/sunrise-data/cosmosclient"
 	"github.com/sunriselayer/sunrise-data/cosmosclient/cosmosaccount"
@@ -29,6 +30,12 @@ func GetPublishContext(conf config.Config) error {
 		return fmt.Errorf("sunrised_rpc is not configured")
 	}
 	log.Info().Msgf("sunrised_rpc: %s", conf.Chain.SunrisedRPC)
+
+	sdkConfig := sdk.GetConfig()
+	sdkConfig.SetBech32PrefixForAccount(conf.Chain.AddressPrefix, conf.Chain.AddressPrefix+"pub")
+	sdkConfig.SetBech32PrefixForValidator(conf.Chain.AddressPrefix+"valoper", conf.Chain.AddressPrefix+"valoperpub")
+	sdkConfig.SetBech32PrefixForConsensusNode(conf.Chain.AddressPrefix+"valcons", conf.Chain.AddressPrefix+"valconspub")
+	sdkConfig.Seal()
 
 	var err error
 	NodeClient, err = cosmosclient.New(
@@ -73,6 +80,12 @@ func GetProofContext(conf config.Config) error {
 		return fmt.Errorf("sunrised_rpc is not configured")
 	}
 	log.Info().Msgf("sunrised_rpc: %s", conf.Chain.SunrisedRPC)
+
+	sdkConfig := sdk.GetConfig()
+	sdkConfig.SetBech32PrefixForAccount(conf.Chain.AddressPrefix, conf.Chain.AddressPrefix+"pub")
+	sdkConfig.SetBech32PrefixForValidator(conf.Chain.AddressPrefix+"valoper", conf.Chain.AddressPrefix+"valoperpub")
+	sdkConfig.SetBech32PrefixForConsensusNode(conf.Chain.AddressPrefix+"valcons", conf.Chain.AddressPrefix+"valconspub")
+	sdkConfig.Seal()
 
 	var err error
 	NodeClient, err = cosmosclient.New(
