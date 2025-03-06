@@ -8,6 +8,7 @@ import (
 
 	"github.com/sunriselayer/sunrise-data/config"
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/protocols"
 	"github.com/sunriselayer/sunrise-data/validator"
 )
 
@@ -22,10 +23,13 @@ var validatorCmd = &cobra.Command{
 			return err
 		}
 
-		// TODO check rpc is enabled
-		err = context.GetProofContext(*config)
-		if err != nil {
+		if err = context.GetProofContext(*config); err != nil {
 			log.Error().Msgf("Failed to connect to sunrised RPC: %s", err)
+			return err
+		}
+
+		if err := protocols.CheckIpfsConnection(); err != nil {
+			log.Error().Msgf("Failed to connect to IPFS: %s", err)
 			return err
 		}
 

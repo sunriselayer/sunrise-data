@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sunriselayer/sunrise-data/config"
 	"github.com/sunriselayer/sunrise-data/context"
+	"github.com/sunriselayer/sunrise-data/protocols"
 	"github.com/sunriselayer/sunrise-data/rollkit"
 )
 
@@ -19,9 +20,13 @@ var rollkitCmd = &cobra.Command{
 			return err
 		}
 
-		err = context.GetPublishContext(*config)
-		if err != nil {
+		if err = context.GetPublishContext(*config); err != nil {
 			log.Error().Msgf("Failed to connect to sunrised RPC: %s", err)
+			return err
+		}
+
+		if err := protocols.CheckIpfsConnection(); err != nil {
+			log.Error().Msgf("Failed to connect to IPFS: %s", err)
 			return err
 		}
 
