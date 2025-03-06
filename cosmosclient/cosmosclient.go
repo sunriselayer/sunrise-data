@@ -718,8 +718,8 @@ func (c *Client) prepareFactory(clientCtx client.Context) (tx.Factory, error) {
 
 func (c Client) newContext() client.Context {
 	addressCodec := addresscodec.NewBech32Codec(c.addressPrefix)
-	validatorAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "val")
-	consensusAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "cons")
+	validatorAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "valoper")
+	consensusAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "valcons")
 
 	var (
 		amino             = codec.NewLegacyAmino()
