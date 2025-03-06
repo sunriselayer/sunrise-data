@@ -30,7 +30,8 @@ func GetPublishContext(conf config.Config) error {
 	}
 	log.Info().Msgf("sunrised_rpc: %s", conf.Chain.SunrisedRPC)
 
-	NodeClient, err := cosmosclient.New(
+	var err error
+	NodeClient, err = cosmosclient.New(
 		Ctx,
 		cosmosclient.WithNodeAddress(conf.Chain.SunrisedRPC),
 		cosmosclient.WithAddressPrefix(conf.Chain.AddressPrefix),
@@ -43,6 +44,12 @@ func GetPublishContext(conf config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create cosmos client: %w", err)
 	}
+
+	_, err = NodeClient.Status(Ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to RPC at %s: %w", conf.Chain.SunrisedRPC, err)
+	}
+
 	QueryClient = datypes.NewQueryClient(NodeClient.Context())
 
 	// Get publisher account from the keyring
@@ -54,6 +61,7 @@ func GetPublishContext(conf config.Config) error {
 	if err != nil {
 		return err
 	}
+	log.Info().Msgf("publisher address: %v", Addr)
 	return nil
 }
 
@@ -66,7 +74,8 @@ func GetProofContext(conf config.Config) error {
 	}
 	log.Info().Msgf("sunrised_rpc: %s", conf.Chain.SunrisedRPC)
 
-	NodeClient, err := cosmosclient.New(
+	var err error
+	NodeClient, err = cosmosclient.New(
 		Ctx,
 		cosmosclient.WithNodeAddress(conf.Chain.SunrisedRPC),
 		cosmosclient.WithAddressPrefix(conf.Chain.AddressPrefix),
@@ -96,5 +105,6 @@ func GetProofContext(conf config.Config) error {
 	if err != nil {
 		return err
 	}
+	log.Info().Msgf("deputy address: %v", Addr)
 	return nil
 }
