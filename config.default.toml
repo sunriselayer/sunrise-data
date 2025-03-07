@@ -1,6 +1,6 @@
 [api]
 port = 8000
-ipfs_api_url = "" // To connect to a local IPFS daemon, leave this empty
+ipfs_api_url = ""
 ipfs_address_info = ""
 
 [chain]
@@ -15,7 +15,7 @@ publish_fees="10000urise"
 
 [validator]
 proof_deputy_account="your_deputy"
-validator_address="" # if you are not a validator, leave this empty
+validator_address=""
 proof_fees="10000urise"
 proof_interval=5
 
