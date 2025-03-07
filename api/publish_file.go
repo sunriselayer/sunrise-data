@@ -59,8 +59,7 @@ func PublishFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	queryClient := types.NewQueryClient(context.NodeClient.Context())
-	queryParamResponse, err := queryClient.Params(context.Ctx, &types.QueryParamsRequest{})
+	queryParamResponse, err := context.QueryClient.Params(context.Ctx, &types.QueryParamsRequest{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

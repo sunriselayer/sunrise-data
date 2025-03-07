@@ -3,11 +3,13 @@ package protocols
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/ipfs/kubo/client/rpc"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/rs/zerolog/log"
 
 	"github.com/sunriselayer/sunrise-data/consts"
 	scontext "github.com/sunriselayer/sunrise-data/context"
@@ -46,6 +48,7 @@ func GetRetrieveProtocol(uri string) (Protocol, error) {
 func ConnectSwarm(addrInfo peer.AddrInfo) error {
 	var err error
 	var node *rpc.HttpApi
+	// connect ipfs node remote or local
 	if scontext.Config.Api.IpfsApiUrl != "" {
 		node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, &http.Client{
 			Transport: &http.Transport{
@@ -65,4 +68,30 @@ func ConnectSwarm(addrInfo peer.AddrInfo) error {
 	err = node.Swarm().Connect(ctx, addrInfo)
 
 	return err
+}
+
+func CheckIpfsConnection() error {
+	var err error
+	var node *rpc.HttpApi
+
+	// connect ipfs node remote or local
+	if scontext.Config.Api.IpfsApiUrl != "" {
+		node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, nil)
+	} else {
+		node, err = rpc.NewLocalApi()
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to connect to ipfs daemon: %w", err)
+	}
+
+	// check ipfs node status
+	ctx := context.Background()
+	_, err = node.Swarm().Peers(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get peers from ipfs daemon: %w", err)
+	}
+
+	log.Info().Msg("successfully connected to ipfs daemon")
+	return nil
 }

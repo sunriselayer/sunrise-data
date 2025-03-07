@@ -54,8 +54,7 @@ func PublishData(req PublishRequest) (PublishResponse, error) {
 		return PublishResponse{}, err
 	}
 
-	queryClient := types.NewQueryClient(context.NodeClient.Context())
-	queryParamResponse, err := queryClient.Params(context.Ctx, &types.QueryParamsRequest{})
+	queryParamResponse, err := context.QueryClient.Params(context.Ctx, &types.QueryParamsRequest{})
 	if err != nil {
 		log.Err(err).Msg("Failed to query da params")
 		return PublishResponse{}, err
