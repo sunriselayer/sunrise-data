@@ -61,7 +61,7 @@ ipfs id
 ### 6. Add a remote IPFS node to the peer list
 
 ```bash
-$ ipfs bootstrap add /ip4/13.114.102.20/tcp/4001/p2p/12D3KooWSBJ1warTMHy7bdaViev6udyWU8XBnz9QCYS8TSX9qadt
+ipfs bootstrap add /ip4/13.114.102.20/tcp/4001/p2p/12D3KooWSBJ1warTMHy7bdaViev6udyWU8XBnz9QCYS8TSX9qadt
 ```
 
 You can visit `http://localhost:8080/ipfs` to check runing IPFS RPC.
@@ -76,18 +76,35 @@ ls
   sunrise-data
 ```
 
-## Run API Service
+## Setup Config
 
-- Prepare config.toml
-  Copy config.default.toml to config.toml and replace your configurations.
+Copy `config.default.toml` to `config.toml` and edit
 
-  To connect to a local IPFS daemon, leave the `ipfs_api_url` field empty. 
-　For a remote IPFS daemon, specify the HTTP URL along with the rpc port number, e.g. `http://1.2.3.4:5001`.
+### Common
 
-　`home_path` is your `sunrised` installed path.
-　`publisher_account` is your publisher account name in your `sunrised` keyring.
+1. `ipfs_api_url`: To connect to a local IPFS daemon, leave this field empty
+1. `home_path`: Your `sunrised` path. Usually ends with `.sunrise`.
+1. `keyring_backend`: `sunrised`'s keyring
+1. `sunrised_rpc`: `sunrised`'s RPC URL. To connect to a local chain, use `http://localhost:26657`
 
-  if you are not a validator, leave `proof_deputy_account` & `validator_address` empty.
+### Only L2 Publisher
+
+1. `publisher_account`: Account to send MetadataUrl of L2 data to Sunrise chain, $RISE balance required.
+1. `publish_fees`: If not enough, increase this.
+
+### Only Validator
+
+1. `proof_deputy_account`:  Account on behalf of the proof, which must be registered with `MsgRegisterProofDeputy` tx.
+1. `validator_address`: Your validator address. Prefixed `sunrisevaloper`.
+1. `proof_fees`: If not enough, increase this.
+
+## Run Service
+
+See [Sunrise Document](https://docs.sunriselayer.io/) for more information of each role.
+
+[L2 Publisher Document](https://docs.sunriselayer.io/build/l2-blockchains/rollkit/sunrise-data)
+
+[Validator Document](https://docs.sunriselayer.io/build/validators/data-availability-proof)
 
 - Run daemon
 
@@ -215,9 +232,11 @@ GET http://localhost:8000/api/get-blob?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1H
 }
 ```
 
-## Monitoring Service
+## Validator Service
 
-- Search transactions
+Validate data availability as obligated by the validator.
+See [Validator Document](https://docs.sunriselayer.io/build/validators/data-availability-proof) for details, including setting up a delegate account.
+
+- Search new `challenging` published data
 - Verify shard double hashes in published data
-- Submit MsgChallengeForFraud
-- Submit MsgSubmitProof
+- Submit `MsgSubmitValidityProof`
