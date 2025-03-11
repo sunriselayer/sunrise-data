@@ -1,13 +1,9 @@
 package sunrise
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	altda "github.com/ethereum-optimism/optimism/op-alt-da"
@@ -50,24 +46,14 @@ func (d *SunriseStore) Get(ctx context.Context, comm []byte) ([]byte, error) {
 	d.Log.Info("sunrise-alt-da: blob request", "id", metadataUri)
 
 	_, cancel := context.WithTimeout(context.Background(), d.GetTimeout)
-	resp, err := http.Get(fmt.Sprintf("%s/api/get-blob?metadata_uri=%s", d.Config.URL, metadataUri))
+	res, err := api.GetBlobData(metadataUri)
 	cancel()
 
 	if err != nil {
 		return nil, fmt.Errorf("sunrise-alt-da: failed to get blob: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("sunrise-alt-da: failed to read response body: %w", err)
-	}
-
-	blobResp := api.GetBlobResponse{}
-	err = json.Unmarshal(body, &blobResp)
-	if err != nil {
-		return nil, fmt.Errorf("sunrise-alt-da: failed to unmarshal response body: %w", err)
-	}
-	blobs := blobResp.Blob
+	blobs := res.Blob
 
 	if len(blobs) == 0 {
 		return nil, fmt.Errorf("sunrise-alt-da: failed to resolve frame: %w", err)
@@ -82,35 +68,20 @@ func (d *SunriseStore) Get(ctx context.Context, comm []byte) ([]byte, error) {
 }
 
 func (d *SunriseStore) Put(ctx context.Context, data []byte) ([]byte, error) {
-	publishReq := api.PublishRequest{
+	req := api.PublishRequest{
 		Blob:             base64.StdEncoding.EncodeToString(data),
 		DataShardCount:   d.Config.DataShardCount,
 		ParityShardCount: d.Config.ParityShardCount,
 		Protocol:         "ipfs",
 	}
-	jsonData, err := json.Marshal(publishReq)
-	if err != nil {
-		return nil, fmt.Errorf("sunrise-alt-da: failed to marshal publish request: %w", err)
-	}
 
-	resp, err := http.Post(fmt.Sprintf("%s/api/publish", d.Config.URL), "application/json", bytes.NewBuffer(jsonData))
+	res, err := api.PublishData(req)
 	if err != nil {
 		return nil, fmt.Errorf("sunrise-alt-da: failed to post publish request: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("sunrise-alt-da: failed to read response body: %w", err)
-	}
-
-	publishResp := api.PublishResponse{}
-	err = json.Unmarshal(body, &publishResp)
-	if err != nil {
-		return nil, fmt.Errorf("sunrise-alt-da: failed to unmarshal response body: %w", err)
-	}
-
-	d.Log.Info("sunrise-alt-da: blob successfully submitted", "tx_hash", publishResp.TxHash, "uri", publishResp.MetadataUri)
-	commitment := altda.NewGenericCommitment(append([]byte{VersionByte}, []byte(publishResp.MetadataUri)...))
+	d.Log.Info("sunrise-alt-da: blob successfully submitted", "tx_hash", res.TxHash, "uri", res.MetadataUri)
+	commitment := altda.NewGenericCommitment(append([]byte{VersionByte}, []byte(res.MetadataUri)...))
 
 	return commitment.Encode(), nil
 }
