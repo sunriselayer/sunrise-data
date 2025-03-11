@@ -3,9 +3,9 @@ package optimism
 import (
 	"fmt"
 
-	oplog "github.com/ethereum-optimism/optimism/op-service/log"
 	"github.com/ethereum-optimism/optimism/op-service/opio"
-	"github.com/urfave/cli/v2"
+	"github.com/rs/zerolog/log"
+	"github.com/sunriselayer/sunrise-data/config"
 )
 
 type Server interface {
@@ -13,38 +13,30 @@ type Server interface {
 	Stop() error
 }
 
-func StartDAServer(cliCtx *cli.Context) error {
-	if err := CheckRequired(cliCtx); err != nil {
+func StartDAServer() error {
+	log.Info().Msg("Initializing Alt DA Server...")
+	config, err := config.LoadConfig()
+	if err != nil {
 		return err
 	}
 
-	cfg := ReadCLIConfig(cliCtx)
-	if err := cfg.Check(); err != nil {
-		return err
+	log.Info().Msgf("Starting Alt DA Server... listen_address: %s, port: %d, data_shard_count: %d, parity_shard_count: %d", config.Optimism.ListenAddress, config.Optimism.Port, config.Optimism.DataShardCount, config.Optimism.ParityShardCount)
+	storeConfig := SunriseConfig{
+		DataShardCount:   config.Optimism.DataShardCount,
+		ParityShardCount: config.Optimism.ParityShardCount,
 	}
-
-	logCfg := oplog.ReadCLIConfig(cliCtx)
-
-	l := oplog.NewLogger(oplog.AppOut(cliCtx), logCfg)
-	oplog.SetGlobalLogHandler(l.Handler())
-
-	l.Info("Initializing Alt DA server...")
-
-	var server Server
-
-	l.Info("Using sunrise storage", "server_url", cfg.SunriseConfig().URL, "data_shard_count", cfg.SunriseConfig().DataShardCount, "parity_shard_count", cfg.SunriseConfig().ParityShardCount)
-	store := NewSunriseStore(cfg.SunriseConfig(), l)
-	server = NewSunriseServer(cliCtx.String(ListenAddrFlagName), cliCtx.Int(PortFlagName), store, l)
+	store := NewSunriseStore(storeConfig)
+	server := NewSunriseServer(config.Optimism.ListenAddress, config.Optimism.Port, store)
 
 	if err := server.Start(); err != nil {
-		return fmt.Errorf("failed to start the DA server")
+		return fmt.Errorf("failed to start the Alt DA Server")
 	} else {
-		l.Info("Started DA Server")
+		log.Info().Msg("Started Alt DA Server")
 	}
 
 	defer func() {
 		if err := server.Stop(); err != nil {
-			l.Error("failed to stop DA server", "err", err)
+			log.Error().Msgf("failed to stop Alt DA Server: %s", err)
 		}
 	}()
 

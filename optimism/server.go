@@ -14,11 +14,10 @@ import (
 	altda "github.com/ethereum-optimism/optimism/op-alt-da"
 	"github.com/ethereum-optimism/optimism/op-service/rpc"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/rs/zerolog/log"
 )
 
 type SunriseServer struct {
-	log        log.Logger
 	endpoint   string
 	store      *SunriseStore
 	tls        *rpc.ServerTLSConfig
@@ -26,10 +25,9 @@ type SunriseServer struct {
 	listener   net.Listener
 }
 
-func NewSunriseServer(host string, port int, store *SunriseStore, log log.Logger) *SunriseServer {
+func NewSunriseServer(host string, port int, store *SunriseStore) *SunriseServer {
 	endpoint := net.JoinHostPort(host, strconv.Itoa(port))
 	return &SunriseServer{
-		log:      log,
 		endpoint: endpoint,
 		store:    store,
 		httpServer: &http.Server{
@@ -79,7 +77,7 @@ func (d *SunriseServer) Start() error {
 }
 
 func (d *SunriseServer) HandleGet(w http.ResponseWriter, r *http.Request) {
-	d.log.Debug("GET", "url", r.URL)
+	log.Debug().Msgf("GET: %s", r.URL)
 
 	route := path.Dir(r.URL.Path)
 	if route != "/get" {
@@ -110,7 +108,7 @@ func (d *SunriseServer) HandleGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *SunriseServer) HandlePut(w http.ResponseWriter, r *http.Request) {
-	d.log.Debug("PUT", "url", r.URL)
+	log.Debug().Msgf("PUT: %s", r.URL)
 
 	route := path.Base(r.URL.Path)
 	if route != "put" {
@@ -127,7 +125,7 @@ func (d *SunriseServer) HandlePut(w http.ResponseWriter, r *http.Request) {
 	comm, err := d.store.Put(r.Context(), input)
 	if err != nil {
 		key := hexutil.Encode(comm)
-		d.log.Info("Failed to store commitment to the DA server", "err", err, "key", key)
+		log.Error().Msgf("Failed to store commitment to the DA server: %s, key: %s", err, key)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
