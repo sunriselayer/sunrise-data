@@ -1,4 +1,4 @@
-package main
+package optimism
 
 import (
 	"errors"
@@ -7,8 +7,6 @@ import (
 	opservice "github.com/ethereum-optimism/optimism/op-service"
 	oplog "github.com/ethereum-optimism/optimism/op-service/log"
 	"github.com/urfave/cli/v2"
-
-	sunrise "github.com/sunriselayer/sunrise-op-da-server"
 )
 
 const (
@@ -100,8 +98,8 @@ func (c CLIConfig) Check() error {
 	return nil
 }
 
-func (c CLIConfig) SunriseConfig() sunrise.SunriseConfig {
-	return sunrise.SunriseConfig{
+func (c CLIConfig) SunriseConfig() SunriseConfig {
+	return SunriseConfig{
 		URL:              c.SunriseEndpoint,
 		DataShardCount:   c.SunriseDataShardCount,
 		ParityShardCount: c.SunriseParityShardCount,

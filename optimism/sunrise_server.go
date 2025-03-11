@@ -1,4 +1,4 @@
-package sunrise
+package optimism
 
 import (
 	"context"

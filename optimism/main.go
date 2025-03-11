@@ -1,4 +1,4 @@
-package main
+package optimism
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 
 var Version = "v0.0.1"
 
-func main() {
+func Start() {
 	oplog.SetupDefaults()
 
 	app := cli.NewApp()
