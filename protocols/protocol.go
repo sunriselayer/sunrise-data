@@ -92,6 +92,6 @@ func CheckIpfsConnection() error {
 		return fmt.Errorf("failed to get peers from ipfs daemon: %w", err)
 	}
 
-	log.Info().Msg("successfully connected to ipfs daemon")
+	log.Info().Msg("Successfully connected to ipfs daemon")
 	return nil
 }
