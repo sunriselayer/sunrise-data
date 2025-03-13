@@ -31,6 +31,12 @@ type Config struct {
 		DataShardCount   int `toml:"data_shard_count"`
 		ParityShardCount int `toml:"parity_shard_count"`
 	}
+	Optimism struct {
+		ListenAddress    string `toml:"listen_address"`
+		Port             int    `toml:"port"`
+		DataShardCount   int    `toml:"data_shard_count"`
+		ParityShardCount int    `toml:"parity_shard_count"`
+	}
 }
 
 func LoadConfig() (*Config, error) {
