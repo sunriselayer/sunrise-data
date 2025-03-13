@@ -123,7 +123,7 @@ sunrise-data validator # if you are a validator
 
 ## API Endpoint
 
-### 1. POST `http://localhost:8000/api/publish`
+### 1. POST `http://localhost:8000/publish`
 
 Request JSON:
 
@@ -144,7 +144,7 @@ Response JSON:
 }
 ```
 
-### 2. GET `http://localhost:8000/api/shard-hashes?metadata_uri=[metadata_uri]&indices=1,2,3`
+### 2. GET `http://localhost:8000/shard-hashes?metadata_uri=[metadata_uri]&indices=1,2,3`
 
 Response:
 
@@ -165,7 +165,7 @@ Response:
 }
 ```
 
-### 3. GET `http://localhost:8000/api/get-blob?metadata_uri`
+### 3. GET `http://localhost:8000/blob?metadata_uri`
 
 Response:
 
@@ -184,7 +184,7 @@ In case that error occurs on API service, Endpoint returns HTTP 400 code and err
 ### 1. Publsh
 
 ```protobuf
-POST http://localhost:8000/api/publish
+POST http://localhost:8000/publish
 Request
 {
     "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=",   // "12345678901234567890"
@@ -202,7 +202,7 @@ Response
 ### 2. Shard Hashes API
 
 ```protobuf
-GET http://localhost:8000/api/shard-hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
+GET http://localhost:8000/shard-hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C&indices=1,2,3
 
 {
     "shard_size":7,
@@ -225,7 +225,7 @@ GET http://localhost:8000/api/shard-hashes?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn4
 ### 3. Get blob data from metadata_uri
 
 ```protobuf
-GET http://localhost:8000/api/get-blob?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
+GET http://localhost:8000/blob?metadata_uri=ipfs://QmPdJ4GtFRvpkbsn47d1HbEioSYtSvgAYDkq5KsL5xUb1C
 
 {
     "blob": "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA"

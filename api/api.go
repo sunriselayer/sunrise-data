@@ -34,14 +34,10 @@ type GetBlobResponse struct {
 
 func Handle() {
 	r := mux.NewRouter()
-	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to sunrise-data API"))
-	}).Methods("GET")
-	r.HandleFunc("/api/publish", Publish).Methods("POST")
-	r.HandleFunc("/api/publish-file", PublishFile).Methods("POST")
+	r.HandleFunc("/publish", Publish).Methods("POST")
 
-	r.HandleFunc("/api/shard-hashes", ShardHashes).Methods("GET")
-	r.HandleFunc("/api/get-blob", GetBlob).Methods("GET")
+	r.HandleFunc("/shard-hashes", ShardHashes).Methods("GET")
+	r.HandleFunc("/blob", GetBlob).Methods("GET")
 
 	log.Info().Msgf("Running Publisher API on localhost: %d", scontext.Config.Api.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", scontext.Config.Api.Port), r)
