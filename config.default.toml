@@ -23,3 +23,9 @@ proof_interval=5
 port=7980
 data_shard_count=5
 parity_shard_count=5
+
+[optimism]
+listen_address="127.0.0.1"
+port=3100
+data_shard_count=10
+parity_shard_count=10
