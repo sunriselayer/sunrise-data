@@ -76,7 +76,12 @@ func CheckIpfsConnection() error {
 
 	// connect ipfs node remote or local
 	if scontext.Config.Api.IpfsApiUrl != "" {
-		node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, nil)
+		node, err = rpc.NewURLApiWithClient(scontext.Config.Api.IpfsApiUrl, &http.Client{
+			Transport: &http.Transport{
+				Proxy:             http.ProxyFromEnvironment,
+				DisableKeepAlives: true,
+			},
+})
 	} else {
 		node, err = rpc.NewLocalApi()
 	}
