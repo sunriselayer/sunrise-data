@@ -328,7 +328,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		c.signer = signer{}
 	}
 	// set address prefix in SDK global config
-	c.SetConfigAddressPrefix()
+	// c.SetConfigAddressPrefix()
 
 	return c, nil
 }
@@ -408,7 +408,7 @@ func (c Client) WaitForTx(ctx context.Context, hash string) (*ctypes.ResultTx, e
 
 // Account returns the account with name or address equal to nameOrAddress.
 func (c Client) Account(nameOrAddress string) (cosmosaccount.Account, error) {
-	defer c.lockBech32Prefix()()
+	// defer c.lockBech32Prefix()()
 
 	acc, err := c.AccountRegistry.GetByName(nameOrAddress)
 	if err == nil {
@@ -520,7 +520,7 @@ func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, 
 // CreateTxWithOptions creates a transaction with the given options.
 // Options override global client options.
 func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.Account, options TxOptions, msgs ...sdktypes.Msg) (TxService, error) {
-	defer c.lockBech32Prefix()()
+	// defer c.lockBech32Prefix()()
 
 	sdkaddr, err := account.Record.GetAddress()
 	if err != nil {

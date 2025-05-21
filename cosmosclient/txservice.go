@@ -29,7 +29,7 @@ func (s TxService) Gas() uint64 {
 // again. Note that this may still end with the same error if the amount is
 // greater than the amount dumped by the faucet.
 func (s TxService) Broadcast(ctx context.Context) (Response, error) {
-	defer s.client.lockBech32Prefix()()
+	// defer s.client.lockBech32Prefix()()
 
 	// validate msgs.
 	for _, msg := range s.txBuilder.GetTx().GetMsgs() {
