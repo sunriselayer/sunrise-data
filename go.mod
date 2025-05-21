@@ -6,6 +6,8 @@ replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alp
 
 replace (
 	cosmossdk.io/core => cosmossdk.io/core v0.11.3
+	github.com/cosmos/iavl => github.com/cosmos/iavl v1.2.2
+	github.com/ethereum/go-ethereum => github.com/ethereum/go-ethereum v1.14.8
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
 	github.com/sunriselayer/sunrise => github.com/sunriselayer/sunrise v0.5.0
@@ -14,6 +16,7 @@ replace (
 )
 
 require (
+	cosmossdk.io/core v0.12.1-0.20240725072823-6a2d039e1212
 	github.com/99designs/keyring v1.2.2
 	github.com/cockroachdb/errors v1.11.3
 	github.com/cometbft/cometbft v0.38.17
@@ -38,13 +41,13 @@ require (
 )
 
 require (
-	cosmossdk.io/core v0.12.1-0.20240725072823-6a2d039e1212 // indirect
 	cosmossdk.io/depinject v1.2.0 // indirect
 	cosmossdk.io/errors/v2 v2.0.0 // indirect
 	cosmossdk.io/log v1.5.1 // indirect
 	cosmossdk.io/schema v1.1.0 // indirect
 	cosmossdk.io/store v1.1.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
@@ -64,24 +67,16 @@ require (
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
-	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/hashicorp/go-bexpr v0.1.11 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/ingonyama-zk/icicle/v3 v3.1.1-0.20241118092657-fccdb2f0921b // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/minio/highwayhash v1.0.3 // indirect
 	github.com/mitchellh/pointerstructure v1.2.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
-	github.com/pion/dtls/v2 v2.2.12 // indirect
-	github.com/pion/logging v0.2.2 // indirect
-	github.com/pion/stun/v2 v2.0.0 // indirect
-	github.com/pion/transport/v2 v2.2.10 // indirect
-	github.com/pion/transport/v3 v3.0.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/ronanh/intcomp v1.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -93,7 +88,6 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.uber.org/mock v0.5.2 // indirect
 	golang.org/x/arch v0.15.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	nhooyr.io/websocket v1.8.11 // indirect
