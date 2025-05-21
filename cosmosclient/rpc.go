@@ -7,6 +7,7 @@ import (
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
+
 	"github.com/sunriselayer/sunrise-data/cosmosclient/errors"
 )
 
@@ -14,7 +15,6 @@ import (
 // Useful because the original implementation may return JSON errors when the
 // requested node is busy, which is confusing for the user. With rpcWrapper,
 // the error is prefixed with 'error while requesting node xxx: JSON error'.
-// TODO(tb): we may remove this wrapper once https://github.com/tendermint/tendermint/issues/9312 is fixed.
 type rpcWrapper struct {
 	rpcclient.Client
 	nodeAddress string

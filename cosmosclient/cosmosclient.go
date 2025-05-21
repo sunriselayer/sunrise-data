@@ -13,28 +13,28 @@ import (
 	"sync"
 	"time"
 
-	apisigning "cosmossdk.io/api/cosmos/tx/signing/v1beta1"
-	"cosmossdk.io/core/transaction"
-	banktypes "cosmossdk.io/x/bank/types"
-	staking "cosmossdk.io/x/staking/types"
-	rpcclient "github.com/cometbft/cometbft/rpc/client"
-	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
-	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	gogogrpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/proto"
+	prototypes "github.com/cosmos/gogoproto/types"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
-	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	gogogrpc "github.com/cosmos/gogoproto/grpc"
-	"github.com/cosmos/gogoproto/proto"
-	prototypes "github.com/cosmos/gogoproto/types"
-	"github.com/rs/zerolog/log"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+
 	"github.com/sunriselayer/sunrise-data/cosmosclient/cosmosaccount"
 	"github.com/sunriselayer/sunrise-data/cosmosclient/errors"
 )
@@ -69,18 +69,18 @@ const (
 	orderAsc = "asc"
 )
 
-// Gasometer allows to mock the tx.CalculateGas func.
+// Gasometer allows mocking the tx.CalculateGas func.
 //
 //go:generate mockery --srcpkg . --name Gasometer --filename gasometer.go --with-expecter
 type Gasometer interface {
-	CalculateGas(clientCtx gogogrpc.ClientConn, txf tx.Factory, msgs ...transaction.Msg) (*txtypes.SimulateResponse, uint64, error)
+	CalculateGas(clientCtx gogogrpc.ClientConn, txf tx.Factory, msgs ...sdktypes.Msg) (*txtypes.SimulateResponse, uint64, error)
 }
 
-// Signer allows to mock the tx.Sign func.
+// Signer allows mocking the tx.Sign func.
 //
 //go:generate mockery --srcpkg . --name Signer --filename signer.go --with-expecter
 type Signer interface {
-	Sign(ctx client.Context, txf tx.Factory, name string, txBuilder client.TxBuilder, overwriteSig bool) error
+	Sign(ctx context.Context, txf tx.Factory, name string, txBuilder client.TxBuilder, overwriteSig bool) error
 }
 
 // Client is a client to access your chain by querying and broadcasting transactions.
@@ -102,11 +102,16 @@ type Client struct {
 	gasometer        Gasometer
 	signer           Signer
 
-	addressPrefix string
+	bech32Prefix string
 
 	nodeAddress string
 	out         io.Writer
 	chainID     string
+
+	useFaucet       bool
+	faucetAddress   string
+	faucetDenom     string
+	faucetMinAmount uint64
 
 	homePath           string
 	keyringServiceName string
@@ -164,10 +169,13 @@ func WithNodeAddress(addr string) Option {
 	}
 }
 
-// WithAddressPrefix sets the address prefix on the client.
-func WithAddressPrefix(prefix string) Option {
+// Deprecated: use WithBech32Prefix instead.
+var WithAddressPrefix = WithBech32Prefix
+
+// WithBech32Prefix sets the address prefix on the client.
+func WithBech32Prefix(prefix string) Option {
 	return func(c *Client) {
-		c.addressPrefix = prefix
+		c.bech32Prefix = prefix
 	}
 }
 
@@ -253,7 +261,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	c := Client{
 		nodeAddress:    defaultNodeAddress,
 		keyringBackend: cosmosaccount.KeyringTest,
-		addressPrefix:  "sunrise",
+		bech32Prefix:   "sunrise",
 		out:            io.Discard,
 		gas:            strconv.Itoa(defaultGasLimit),
 	}
@@ -265,7 +273,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	}
 
 	if c.RPC == nil {
-		if c.RPC, err = rpchttp.New(c.nodeAddress); err != nil {
+		if c.RPC, err = rpchttp.New(c.nodeAddress, "/websocket"); err != nil {
 			return Client{}, err
 		}
 	}
@@ -298,6 +306,7 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 		cosmosaccount.WithKeyringServiceName(c.keyringServiceName),
 		cosmosaccount.WithKeyringBackend(c.keyringBackend),
 		cosmosaccount.WithHome(c.keyringDir),
+		cosmosaccount.WithBech32Prefix(c.bech32Prefix),
 	)
 	if err != nil {
 		return Client{}, err
@@ -318,9 +327,8 @@ func New(ctx context.Context, options ...Option) (Client, error) {
 	if c.signer == nil {
 		c.signer = signer{}
 	}
-	// Cosmos SDK v0.52 does not allow configuration changes after the Config is sealed.
-	// // set address prefix in SDK global config
-	// c.SetConfigAddressPrefix()
+	// set address prefix in SDK global config
+	c.SetConfigAddressPrefix()
 
 	return c, nil
 }
@@ -400,7 +408,7 @@ func (c Client) WaitForTx(ctx context.Context, hash string) (*ctypes.ResultTx, e
 
 // Account returns the account with name or address equal to nameOrAddress.
 func (c Client) Account(nameOrAddress string) (cosmosaccount.Account, error) {
-	// defer c.lockBech32Prefix()()
+	defer c.lockBech32Prefix()()
 
 	acc, err := c.AccountRegistry.GetByName(nameOrAddress)
 	if err == nil {
@@ -415,7 +423,7 @@ func (c Client) Address(accountName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return a.Address(c.addressPrefix)
+	return a.Address(c.bech32Prefix)
 }
 
 // Context returns client context.
@@ -423,15 +431,15 @@ func (c Client) Context() client.Context {
 	return c.context
 }
 
-// // SetConfigAddressPrefix sets the account prefix in the SDK global config.
-// func (c Client) SetConfigAddressPrefix() {
-// 	// TODO find a better way if possible.
-// 	// https://github.com/ignite/cli/issues/2744
-// 	mconf.Lock()
-// 	defer mconf.Unlock()
-// 	config := sdktypes.GetConfig()
-// 	config.SetBech32PrefixForAccount(c.addressPrefix, c.addressPrefix+"pub")
-// }
+// SetConfigAddressPrefix sets the account prefix in the SDK global config.
+func (c Client) SetConfigAddressPrefix() {
+	// TODO find a better way if possible.
+	// https://github.com/ignite/cli/issues/2744
+	mconf.Lock()
+	defer mconf.Unlock()
+	config := sdktypes.GetConfig()
+	config.SetBech32PrefixForAccount(c.bech32Prefix, c.bech32Prefix+"pub")
+}
 
 // Response of your broadcasted transaction.
 type Response struct {
@@ -493,14 +501,14 @@ func (c Client) Status(ctx context.Context) (*ctypes.ResultStatus, error) {
 // protects sdktypes.Config.
 var mconf sync.Mutex
 
-// func (c Client) lockBech32Prefix() (unlockFn func()) {
-// 	mconf.Lock()
-// 	config := sdktypes.GetConfig()
-// 	config.SetBech32PrefixForAccount(c.addressPrefix, c.addressPrefix+"pub")
-// 	return mconf.Unlock
-// }
+func (c Client) lockBech32Prefix() (unlockFn func()) {
+	mconf.Lock()
+	config := sdktypes.GetConfig()
+	config.SetBech32PrefixForAccount(c.bech32Prefix, c.bech32Prefix+"pub")
+	return mconf.Unlock
+}
 
-func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, msgs ...transaction.Msg) (Response, error) {
+func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, msgs ...sdktypes.Msg) (Response, error) {
 	txService, err := c.CreateTx(ctx, account, msgs...)
 	if err != nil {
 		return Response{}, err
@@ -511,8 +519,8 @@ func (c Client) BroadcastTx(ctx context.Context, account cosmosaccount.Account, 
 
 // CreateTxWithOptions creates a transaction with the given options.
 // Options override global client options.
-func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.Account, options TxOptions, msgs ...transaction.Msg) (TxService, error) {
-	// defer c.lockBech32Prefix()()
+func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.Account, options TxOptions, msgs ...sdktypes.Msg) (TxService, error) {
+	defer c.lockBech32Prefix()()
 
 	sdkaddr, err := account.Record.GetAddress()
 	if err != nil {
@@ -553,10 +561,7 @@ func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.A
 		} else {
 			_, gas, err = c.gasometer.CalculateGas(clientCtx, txf, msgs...)
 			if err != nil {
-				log.Error().Msgf("CalculateGas error")
-				gas = 800000
-			} else {
-				log.Info().Msgf("calculated gas: %v", gas)
+				return TxService{}, errors.WithStack(err)
 			}
 			// the simulated gas can vary from the actual gas needed for a real transaction
 			// we add an amount to ensure sufficient gas is provided
@@ -585,7 +590,7 @@ func (c Client) CreateTxWithOptions(ctx context.Context, account cosmosaccount.A
 	}, nil
 }
 
-func (c Client) CreateTx(ctx context.Context, account cosmosaccount.Account, msgs ...transaction.Msg) (TxService, error) {
+func (c Client) CreateTx(ctx context.Context, account cosmosaccount.Account, msgs ...sdktypes.Msg) (TxService, error) {
 	return c.CreateTxWithOptions(ctx, account, TxOptions{}, msgs...)
 }
 
@@ -721,15 +726,11 @@ func (c *Client) prepareFactory(clientCtx client.Context) (tx.Factory, error) {
 }
 
 func (c Client) newContext() client.Context {
-	addressCodec := addresscodec.NewBech32Codec(c.addressPrefix)
-	validatorAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "valoper")
-	consensusAddressCodec := addresscodec.NewBech32Codec(c.addressPrefix + "valcons")
-
 	var (
 		amino             = codec.NewLegacyAmino()
 		interfaceRegistry = codectypes.NewInterfaceRegistry()
 		marshaler         = codec.NewProtoCodec(interfaceRegistry)
-		txConfig          = authtx.NewTxConfig(marshaler, addressCodec, validatorAddressCodec, authtx.DefaultSignModes)
+		txConfig          = authtx.NewTxConfig(marshaler, authtx.DefaultSignModes)
 	)
 
 	authtypes.RegisterInterfaces(interfaceRegistry)
@@ -753,11 +754,7 @@ func (c Client) newContext() client.Context {
 		WithClient(c.RPC).
 		WithSkipConfirmation(true).
 		WithKeyring(c.AccountRegistry.Keyring).
-		WithGenerateOnly(c.generateOnly).
-		WithAddressCodec(addressCodec).
-		WithValidatorAddressCodec(validatorAddressCodec).
-		WithConsensusAddressCodec(consensusAddressCodec).
-		WithAddressPrefix(c.addressPrefix)
+		WithGenerateOnly(c.generateOnly)
 }
 
 func newFactory(clientCtx client.Context) tx.Factory {
@@ -766,7 +763,7 @@ func newFactory(clientCtx client.Context) tx.Factory {
 		WithKeybase(clientCtx.Keyring).
 		WithGas(defaultGasLimit).
 		WithGasAdjustment(defaultGasAdjustment).
-		WithSignMode(apisigning.SignMode_SIGN_MODE_UNSPECIFIED).
+		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
 		WithTxConfig(clientCtx.TxConfig)
 }
