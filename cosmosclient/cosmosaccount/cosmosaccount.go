@@ -37,8 +37,8 @@ var KeyringHome = os.ExpandEnv("$HOME/.ignite/accounts")
 var ErrAccountExists = errors.New("account already exists")
 
 const (
-	CoinTypeCosmos      = sdktypes.CoinType
-	AccountPrefixCosmos = "cosmos"
+	CoinTypeCosmos       = sdktypes.CoinType
+	AccountPrefixSunrise = "sunrise"
 )
 
 // KeyringBackend is the backend for where keys are stored.
@@ -107,7 +107,7 @@ func New(options ...Option) (Registry, error) {
 		keyringServiceName: sdktypes.KeyringServiceName(),
 		keyringBackend:     KeyringTest,
 		homePath:           KeyringHome,
-		addressCodec:       address.NewBech32Codec(AccountPrefixCosmos),
+		addressCodec:       address.NewBech32Codec(AccountPrefixSunrise),
 		coinType:           CoinTypeCosmos,
 	}
 
@@ -157,7 +157,7 @@ type Account struct {
 // Address returns the address of the account from given prefix.
 func (a Account) Address(accPrefix string) (string, error) {
 	if accPrefix == "" {
-		accPrefix = AccountPrefixCosmos
+		accPrefix = AccountPrefixSunrise
 	}
 
 	pk, err := a.Record.GetPubKey()
