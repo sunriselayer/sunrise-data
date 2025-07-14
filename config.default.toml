@@ -10,22 +10,16 @@ keyring_backend="test"
 sunrised_rpc="http://localhost:26657"
 
 [publish]
-publisher_account="your_publisher"
-publish_fees="10000urise"
+publisher_account="your_publisher (e.g. user)"
+publish_fees="5000uusdrise"
 
 [validator]
-proof_deputy_account="your_deputy"
-validator_address=""
-proof_fees="10000urise"
+proof_deputy_account="your_deputy (e.g. user)"
+validator_address="your_validator_address (e.g. sunrisevaloper1a8jcsmla6heu99ldtazc27dna4qcd4jyv75vcz)"
+proof_fees="6000uusdrise"
 proof_interval=5
 
 [rollkit]
 port=7980
 data_shard_count=5
 parity_shard_count=5
-
-[optimism]
-listen_address="127.0.0.1"
-port=3100
-data_shard_count=10
-parity_shard_count=10
